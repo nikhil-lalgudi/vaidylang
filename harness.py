@@ -18,6 +18,10 @@ def digest(ids) -> str:
     return hashlib.sha256(np.asarray(ids, dtype="<i8").tobytes()).hexdigest()
 
 
+def host_fingerprint() -> str:
+    return hashlib.sha256(platform.node().encode()).hexdigest()
+
+
 def workload(seed: int, length: int, new_tokens: int, vocab: int) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng([seed, length])
     ids = rng.integers(0, min(vocab, 32768), size=length + new_tokens - 1)
@@ -159,7 +163,7 @@ def benchmark(args, engine) -> dict:
             "device": "cpu",
             "dtype": "float32",
             "machine": platform.machine(),
-            "host": hashlib.sha256(platform.node().encode()).hexdigest(),
+            "host": host_fingerprint(),
             "python": platform.python_version(),
             "numpy": np.__version__,
             "thread_env": {name: os.getenv(name) for name in (

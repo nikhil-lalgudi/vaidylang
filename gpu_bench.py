@@ -4,11 +4,10 @@ import argparse
 from importlib.metadata import version
 import json
 from pathlib import Path
-import platform
 import subprocess
 from time import perf_counter_ns
 
-from harness import checkpoint_identity, request_sample, summarize_case
+from harness import checkpoint_identity, host_fingerprint, request_sample, summarize_case
 
 
 FIXTURES = Path(__file__).with_name("fixtures") / "qwen3-0.6b-batch1.json"
@@ -113,7 +112,7 @@ def benchmark_sglang(args):
             "driver": driver,
             "cuda": torch.version.cuda,
             "torch": torch.__version__,
-            "host": platform.node(),
+            "host": host_fingerprint(),
             "dtype": "bfloat16",
             "kv_cache_dtype": "bfloat16",
             "prefix_cache": False,
