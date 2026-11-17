@@ -78,13 +78,20 @@ def sglang_tokens(runner, prepare_inputs, ids, annotate):
     finally:
         runner.cleanup(state)
 
-def cuda_tokens(engine, state, ids, annotate):
+def cuda_tokens(engine, state, ids, annotate, graph=None):
     with annotate("prefill"):
-        token = engine.prefill_into(ids, state).argmax().reshape(1)
+        if graph is None:
+            token = engine.prefill_into(ids, state).argmax().reshape(1)
+        else:
+            graph.prefill(ids)
+            token = graph.token
         yield token
     for _ in range(NEW_TOKENS - 1):
         with annotate("decode"):
-            token = engine.decode(token, state).argmax().reshape(1)
+            if graph is None:
+                token = engine.decode(token, state).argmax().reshape(1)
+            else:
+                graph.decode(token)
             yield token
 
 
@@ -134,16 +141,21 @@ def benchmark_gpu(args):
         tag = f"sglang-{SGLANG_VERSION}"
         implementation = {"engine": "sglang", "version": SGLANG_VERSION, "settings": settings}
     else:
-        from cuda_engine import CudaQwen3Engine
+        from cuda_engine import CudaQwen3Engine, DecodeGraph
 
         engine = CudaQwen3Engine.from_checkpoint(args.checkpoint, dtype=torch.bfloat16)
         states = {len(ids): engine.allocate_cache(len(ids) + NEW_TOKENS - 1) for ids in prompts}
+        graphs = {
+            len(ids): DecodeGraph(engine, states[len(ids)], ids) for ids in prompts
+        } if args.cuda_graph else {}
         with torch.inference_mode():
             cases = benchmark_cases(
-                args, prompts, lambda ids: cuda_tokens(engine, states[len(ids)], ids, annotate),
+                args, prompts,
+                lambda ids: cuda_tokens(engine, states[len(ids)], ids, annotate, graphs.get(len(ids))),
             )
-        tag = "cuda-eager"
-        implementation = {"engine": "cuda", "decode": "eager", "attention": "flash-attention-3"}
+        mode = "graph" if args.cuda_graph else "eager"
+        tag = f"cuda-{mode}"
+        implementation = {"engine": "cuda", "decode": mode, "attention": "flash-attention-3"}
 
     return {
         "schema_version": 1,
@@ -179,12 +191,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", choices=("sglang", "cuda"), default="sglang")
     parser.add_argument("--source-tag")
+    parser.add_argument("--cuda-graph", action="store_true", help="Replay the CUDA engine decode step")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--profile", action="store_true", help="Label prefill and decode in an Nsight trace")
     args = parser.parse_args()
+    if args.cuda_graph and args.engine != "cuda":
+        parser.error("--cuda-graph requires --engine cuda")
     if args.output.exists():
         parser.error(f"{args.output} already exists")
     if args.repeats < 1 or args.warmup < 0:

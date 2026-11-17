@@ -48,3 +48,17 @@ class CudaEngineTests(unittest.TestCase):
             state = engine.allocate_cache(132)
         self.assertTrue(torch.isfinite(state.keys).all().item())
         self.assertTrue(torch.isfinite(state.values).all().item())
+
+    def test_decode_graph_replays_with_new_tokens_and_reset_cache(self):
+        from cuda_engine import CudaQwen3Engine, DecodeGraph
+
+        engine = CudaQwen3Engine(*tiny_weights(), dtype=torch.float32)
+        graph = DecodeGraph(engine, engine.allocate_cache(7), [3, 1, 4])
+        for prompt, continuation in (([3, 1, 4], [7, 8]), ([1, 5], [9, 2])):
+            expected, state = engine.prefill(prompt, capacity=7)
+            torch.testing.assert_close(graph.prefill(prompt), expected, atol=0, rtol=0)
+            for token in continuation:
+                expected = engine.decode(token, state)
+                torch.testing.assert_close(graph.decode(token), expected, atol=0, rtol=0)
+                self.assertEqual(graph.token.item(), expected.argmax().item())
+            self.assertEqual(graph.state.position.item(), len(prompt) + len(continuation))

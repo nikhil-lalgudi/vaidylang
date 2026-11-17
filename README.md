@@ -79,7 +79,14 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
 
    The BF16 check allows for the logit differences observed between fused and eager attention and requires identical greedy IDs at each checked step. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
 
-3. **Profile and test one change per run.** Use Nsight Systems to see launch gaps, copies, and synchronization. Measure kernel bottlenecks with Nsight Compute. Test CUDA Graph replay with stable buffer addresses for launch-bound decode. Test packed QKV projections or fused residual and RMSNorm if the trace implicates those operations. Measure wall time for request latency and CUDA events for GPU time.
+3. **Profile and test one change per run.** Add `--cuda-graph` to the CUDA verification and benchmark commands to replay decode with stable cache and token addresses. Capture each variant with Nsight Systems and `--profile` to mark the entire decode step.
+
+   ```bash
+   nsys export --type=sqlite --output=results/candidate/decode.sqlite results/candidate/decode.nsys-rep
+   python tools/decode_trace.py results/candidate/decode.sqlite > results/candidate/trace-summary.json
+   ```
+
+   The summary measures GPU kernel activity inside each decode range. The unprofiled benchmark JSON is the source of latency percentiles.
 
 4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and token timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
 

@@ -179,3 +179,64 @@ class CudaQwen3Engine:
 
         state.position.add_(steps)
         return F.linear(rms_norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
+
+
+class DecodeGraph:
+    """Replay one decode step, including argmax, with stable cache and token addresses."""
+
+    @torch.inference_mode()
+    def __init__(self, engine, state, primer):
+        self.engine = engine
+        self.state = state
+        self.token = torch.empty(1, dtype=torch.long, device=engine.device)
+        self.prefill(primer)
+        if not state.remaining:
+            raise ValueError("Decode graph requires room for one more token")
+
+        # https://docs.pytorch.org/docs/2.14/notes/cuda.html#cuda-graphs
+        current = torch.cuda.current_stream(engine.device)
+        warmup = torch.cuda.Stream(device=engine.device)
+        warmup.wait_stream(current)
+        with torch.cuda.stream(warmup):
+            for _ in range(3):
+                state.position.fill_(len(primer))
+                self._step()
+        current.wait_stream(warmup)
+        state.position.fill_(len(primer))
+        self.graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(self.graph):
+            self.logits = self._step()
+
+    def _step(self):
+        logits = self.engine._forward(self.token, self.state, prefill=False)
+        torch.argmax(logits, dim=0, out=self.token.view(()))
+        return logits
+
+    @torch.inference_mode()
+    def prefill(self, ids):
+        logits = self.engine.prefill_into(ids, self.state)
+        torch.argmax(logits, dim=0, out=self.token.view(()))
+        return logits
+
+    @torch.inference_mode()
+    def decode(self, token):
+        if not self.state.remaining:
+            raise ValueError("KV cache capacity exceeded")
+        if token is not self.token:
+            self.token.copy_(torch.as_tensor(token, device=self.token.device))
+        self.graph.replay()
+        self.state.remaining -= 1
+        return self.logits
+
+
+class GraphQwen3Engine(CudaQwen3Engine):
+    def prefill(self, token_ids, capacity):
+        if capacity <= len(token_ids):
+            return super().prefill(token_ids, capacity)
+        graph = DecodeGraph(self, self.allocate_cache(capacity), token_ids)
+        return graph.prefill(token_ids), graph
+
+    def decode(self, token_id, state):
+        if isinstance(state, DecodeGraph):
+            return state.decode(token_id)
+        return super().decode(token_id, state)
