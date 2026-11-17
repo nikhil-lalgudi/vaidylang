@@ -179,8 +179,11 @@ def compare(args) -> dict:
         if base["input_sha256"] != cand["input_sha256"]:
             raise ValueError(f"Results used different token IDs at prompt length {length}")
         same_tokens = [s["output_sha256"] for s in base["samples"]] == [s["output_sha256"] for s in cand["samples"]]
-        tpot_improvement = 100 * (1 - cand["tpot_ms"]["p50"] / base["tpot_ms"]["p50"])
-        ttft_regression = 100 * (cand["ttft_ms"]["p95"] / base["ttft_ms"]["p95"] - 1)
+        base_tpot = base["tpot_ms"]["p50"]
+        base_ttft = base["ttft_ms"]["p95"]
+        # Ignore floating-point noise at the inclusive percentage limits.
+        tpot_improvement = round(100 * (base_tpot - cand["tpot_ms"]["p50"]) / base_tpot, 12)
+        ttft_regression = round(100 * (cand["ttft_ms"]["p95"] - base_ttft) / base_ttft, 12)
         cases.append({
             "prompt_tokens": length,
             "matching_output": same_tokens,

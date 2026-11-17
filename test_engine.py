@@ -100,6 +100,23 @@ class EngineTests(unittest.TestCase):
             write_result(args.candidate, 4, "c")
             self.assertFalse(compare(args)["passed"])
 
+    def test_compare_accepts_both_exact_latency_limits(self):
+        with TemporaryDirectory() as directory:
+            path = Path(directory)
+            args = SimpleNamespace(
+                baseline=path / "base.json", candidate=path / "candidate.json",
+                min_tpot_improvement_pct=10.0, max_ttft_regression_pct=5.0,
+            )
+            for target, ttft, tpot in ((args.baseline, 100, 100), (args.candidate, 105, 90)):
+                target.write_text(json.dumps({
+                    "schema_version": 1, "run": {"dtype": "bfloat16"},
+                    "cases": [{
+                        "prompt_tokens": 128, "input_sha256": "a", "ttft_ms": {"p95": ttft},
+                        "tpot_ms": {"p50": tpot}, "samples": [{"output_sha256": "b"}],
+                    }],
+                }))
+            self.assertTrue(compare(args)["passed"])
+
 
 if __name__ == "__main__":
     unittest.main()
