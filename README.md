@@ -77,7 +77,7 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
      --atol 0.5 --rtol 0.025
    ```
 
-   The BF16 check allows for the logit differences observed between fused and eager attention and requires identical greedy IDs at each checked step. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
+   The BF16 check allows for the logit differences observed between fused and eager attention. At each checked step, the CUDA choice must be among the oracle's exact logit maxima. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
 
 3. **Profile and test one change per run.** Add `--cuda-graph` to the CUDA verification and benchmark commands to replay decode with stable cache and token addresses. Capture each variant with Nsight Systems and `--profile` to mark the entire decode step.
 

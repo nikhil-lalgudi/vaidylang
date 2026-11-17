@@ -66,12 +66,15 @@ def verify_sequence(engine, oracle, prompt, tail, greedy, atol, rtol) -> float:
         max_error = max(max_error, error)
         expected_id = int(expected.argmax())
         actual_id = int(actual.argmax())
-        if not np.allclose(actual, expected, atol=atol, rtol=rtol) or actual_id != expected_id:
+        if not np.allclose(actual, expected, atol=atol, rtol=rtol) or expected[actual_id] != expected[expected_id]:
             top_two = np.partition(expected, -2)[-2:]
+            rank = 1 + np.count_nonzero(expected > expected[actual_id])
             raise ValueError(
                 f"{path} parity failed at prompt length {len(prompt)}, step {step}. "
                 f"Max absolute error {error:.3g}, candidate token {actual_id}, "
-                f"oracle token {expected_id}, oracle top-2 margin {float(np.ptp(top_two)):.3g}."
+                f"oracle token {expected_id}, candidate oracle rank {rank}, "
+                f"oracle logits {float(expected[actual_id])!r} and {float(expected[expected_id])!r}, "
+                f"oracle top-2 margin {float(np.ptp(top_two)):.3g}."
             )
         if step < len(tail):
             token = actual_id if greedy else int(tail[step])
