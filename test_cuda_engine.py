@@ -12,6 +12,74 @@ from engine import Qwen3Engine, tiny_weights
 
 @unittest.skipUnless(torch is not None and torch.cuda.is_available(), "requires CUDA")
 class CudaEngineTests(unittest.TestCase):
+    def test_block_commit_and_rollback_match_scalar_cache(self):
+        from cuda_engine import BlockDecodeGraph, CudaQwen3Engine, DecodeGraph
+
+        engine = CudaQwen3Engine(*tiny_weights(), dtype=torch.float32, packed_projections=True)
+        prompt = [3, 1, 4, 1, 5]
+        state = engine.allocate_cache(12)
+        single = DecodeGraph(engine, state, prompt)
+        block = BlockDecodeGraph(engine, state, prompt, 4)
+        single.prefill(prompt)
+        _, reference = engine.prefill(prompt, 12)
+
+        candidates = [9, 2, 10, 6]
+        logits = block.stage(candidates)
+        with self.assertRaisesRegex(ValueError, "staged"):
+            single.decode(9)
+        for index, token in enumerate(candidates[:2]):
+            expected = engine.decode(token, reference)
+            torch.testing.assert_close(logits[index], expected, atol=2e-5, rtol=2e-5)
+        block.commit(2)
+        self.assertEqual(state.position.item(), len(prompt) + 2)
+        self.assertEqual(state.remaining, 5)
+
+        block.stage([7, 8, 9, 10])
+        block.commit(0)
+        expected = engine.decode(3, reference)
+        torch.testing.assert_close(single.decode(3), expected, atol=2e-5, rtol=2e-5)
+        self.assertEqual(state.position.item(), len(prompt) + 3)
+        block.stage([5, 6, 7, 8])
+        block.commit(3)
+        with self.assertRaisesRegex(ValueError, "capacity"):
+            block.stage([9, 9, 9, 9])
+
+    def test_draft_rejection_preserves_greedy_continuation(self):
+        from cuda_engine import BlockDecodeGraph, CudaQwen3Engine, DecodeGraph
+        from speculative import speculative_tokens
+
+        engine = CudaQwen3Engine(*tiny_weights(), dtype=torch.float32, packed_projections=True)
+        prompt = [3, 1, 4, 1, 5]
+        new_tokens = 16
+        state = engine.allocate_cache(len(prompt) + new_tokens - 1)
+        single = DecodeGraph(engine, state, prompt)
+        single.prefill(prompt)
+        expected = [single.token.item()]
+        for _ in range(new_tokens - 1):
+            single.decode(single.token)
+            expected.append(single.token.item())
+
+        class MixedDraft:
+            should_reject = False
+
+            def propose(self, history, limit):
+                start = len(history) - len(prompt)
+                proposal = expected[start:start + limit]
+                self.should_reject = not self.should_reject
+                if self.should_reject:
+                    proposal[-1] = (proposal[-1] + 1) % engine.config.vocab_size
+                return proposal
+
+        block = BlockDecodeGraph(engine, state, prompt, 4)
+        cycles = []
+        self.assertEqual(
+            list(speculative_tokens(single, block, prompt, new_tokens, MixedDraft, cycles=cycles)),
+            expected,
+        )
+        self.assertTrue(any(cycle["accepted"] for cycle in cycles))
+        self.assertTrue(any(cycle["accepted"] < cycle["proposed"] for cycle in cycles))
+        self.assertEqual(state.position.item(), len(prompt) + new_tokens - 1)
+
     def test_cached_decode_matches_cpu_and_preserves_independent_requests(self):
         from cuda_engine import CudaQwen3Engine
 
@@ -156,3 +224,33 @@ class CudaEngineTests(unittest.TestCase):
                 torch.testing.assert_close(values[0, offset], v[0], atol=0, rtol=0)
                 self.assertTrue(keys[:, offset + 1:].isnan().all().item())
                 self.assertTrue(values[:, offset + 1:].isnan().all().item())
+
+    @unittest.skipUnless(find_spec("triton"), "requires Triton")
+    def test_tiled_block_attention_matches_scalar_across_tile_boundary(self):
+        from cuda_attention import tiled_decode_attention
+
+        generator = torch.Generator(device="cuda").manual_seed(711)
+
+        def rand(*shape):
+            return torch.randn(shape, device="cuda", dtype=torch.bfloat16, generator=generator)
+
+        keys, values = rand(1, 75, 2, 128), rand(1, 75, 2, 128)
+        keys[:, 63:].fill_(float("nan"))
+        values[:, 63:].fill_(float("nan"))
+        scalar_keys, scalar_values = keys.clone(), values.clone()
+        angles = rand(75, 64).float()
+        cos, sin = angles.cos().bfloat16(), angles.sin().bfloat16()
+        q, k = rand(4, 4, 128), rand(4, 2, 128)
+        v = rand(4, 3, 128)[:, :2]
+        position = torch.tensor([63], device="cuda", dtype=torch.int32)
+        block = tiled_decode_attention(q, keys, values, k, v, position, cos, sin)
+        scalar = torch.cat([
+            tiled_decode_attention(
+                q[row:row + 1], scalar_keys, scalar_values, k[row:row + 1],
+                v[row:row + 1], position + row, cos, sin,
+            )
+            for row in range(4)
+        ])
+        torch.testing.assert_close(block, scalar, atol=0, rtol=0)
+        torch.testing.assert_close(keys, scalar_keys, atol=0, rtol=0, equal_nan=True)
+        torch.testing.assert_close(values, scalar_values, atol=0, rtol=0, equal_nan=True)

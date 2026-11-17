@@ -17,6 +17,7 @@ class CudaState:
     values: torch.Tensor
     position: torch.Tensor
     remaining: int
+    staged_by: object | None = None
 
     @property
     def capacity(self):
@@ -191,6 +192,8 @@ class CudaQwen3Engine:
 
     @torch.inference_mode()
     def prefill_into(self, token_ids, state):
+        if state.staged_by is not None:
+            raise ValueError("A speculative block is staged")
         ids = torch.as_tensor(token_ids)
         if ids.ndim != 1 or ids.numel() == 0 or ids.dtype not in (torch.int32, torch.int64):
             raise ValueError("Expected a nonempty one-dimensional sequence of token IDs")
@@ -206,6 +209,8 @@ class CudaQwen3Engine:
 
     @torch.inference_mode()
     def decode(self, token_id, state):
+        if state.staged_by is not None:
+            raise ValueError("A speculative block is staged")
         if state.remaining <= 0:
             raise ValueError("KV cache capacity exceeded")
         if isinstance(token_id, int) and not 0 <= token_id < self.config.vocab_size:
@@ -217,17 +222,24 @@ class CudaQwen3Engine:
         state.remaining -= 1
         return logits
 
-    def _forward(self, ids, state, *, prefill):
+    def _forward(self, ids, state, *, prefill, block_backend=None):
         c = self.config
         steps = ids.numel()
         packed = self.packed_projections and not (prefill and self.unpacked_prefill)
         dense = prefill and self.dense_prefill and steps >= self.dense_prefill
-        fused = not prefill and self.fused_decode_pointwise
+        block = block_backend is not None
+        tiled = not prefill and self.decode_attention is not None and block_backend != "flash"
+        fused = not prefill and (not block or tiled) and self.fused_decode_pointwise
         if self.flash_attention is None:
             positions = state.position + self.positions[:steps]
             cos = self.cos.index_select(0, positions).unsqueeze(1)
             sin = self.sin.index_select(0, positions).unsqueeze(1)
-            mask = None if prefill else self.positions[:state.capacity] <= state.position
+            if prefill:
+                mask = None
+            elif block:
+                mask = self.positions[:state.capacity] <= positions[:, None]
+            else:
+                mask = self.positions[:state.capacity] <= state.position
 
         hidden = self.embeddings.index_select(0, ids)
         for index, w in enumerate(self.layers):
@@ -237,14 +249,15 @@ class CudaQwen3Engine:
                 x = self.norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
             if packed:
                 q, k, v = F.linear(x, w["self_attn.qkv_proj.weight"]).split(self.qkv_widths, dim=-1)
-                q, k, v = q.contiguous(), k.contiguous(), v.contiguous()
+                if not (block and tiled and fused):
+                    q, k, v = q.contiguous(), k.contiguous(), v.contiguous()
             else:
                 q = F.linear(x, w["self_attn.q_proj.weight"])
                 k = F.linear(x, w["self_attn.k_proj.weight"])
                 v = F.linear(x, w["self_attn.v_proj.weight"])
             q = q.view(steps, c.num_attention_heads, c.head_dim)
             k = k.view(steps, c.num_key_value_heads, c.head_dim)
-            v = v.view_as(k)
+            v = v.view(steps, c.num_key_value_heads, c.head_dim)
             q_weight, k_weight = w["self_attn.q_norm.weight"], w["self_attn.k_norm.weight"]
             if fused:
                 q, k = self.norm_qk(q, k, q_weight, k_weight, c.rms_norm_eps)
@@ -258,15 +271,15 @@ class CudaQwen3Engine:
                 keys[:, :steps].copy_(k.unsqueeze(0))
                 values[:, :steps].copy_(v.unsqueeze(0))
                 joined = self.flash_attention(q.unsqueeze(0), k.unsqueeze(0), v.unsqueeze(0), causal=True)
-            elif not prefill and self.decode_attention is not None:
+            elif tiled:
                 joined = self.decode_attention(q, keys, values, k, v, state.position, self.cos, self.sin)
             elif self.flash_attention is not None:
                 # The kernel appends K/V and applies Qwen's split-half RoPE from the device position.
                 joined = self.flash_attention(
                     q.unsqueeze(0), keys, values, k=k.unsqueeze(0), v=v.unsqueeze(0),
                     cache_seqlens=state.position, rotary_cos=self.cos, rotary_sin=self.sin,
-                    rotary_interleaved=False, causal=prefill,
-                    num_splits=0 if prefill else self.decode_splits,
+                    rotary_interleaved=False, causal=prefill or block,
+                    num_splits=0 if prefill or block else self.decode_splits,
                 )
             else:
                 q, k = rotate(q, cos, sin), rotate(k, cos, sin)
@@ -296,10 +309,28 @@ class CudaQwen3Engine:
         state.position.add_(steps)
         if fused:
             _, normalized = self.norm_residual(hidden, update, self.final_norm, c.rms_norm_eps)
-            normalized = normalized[0]
+            if not block:
+                normalized = normalized[0]
         else:
-            normalized = self.norm(hidden[-1], self.final_norm, c.rms_norm_eps)
+            normalized = self.norm(hidden if block else hidden[-1], self.final_norm, c.rms_norm_eps)
         return F.linear(normalized, self.lm_head)
+
+
+def _capture_decode(engine, state, start, step):
+    # Use a separate warmup stream and keep all cache addresses stable for replay.
+    current = torch.cuda.current_stream(engine.device)
+    warmup = torch.cuda.Stream(device=engine.device)
+    warmup.wait_stream(current)
+    with torch.cuda.stream(warmup):
+        for _ in range(3):
+            state.position.fill_(start)
+            step()
+    current.wait_stream(warmup)
+    state.position.fill_(start)
+    graph = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(graph):
+        logits = step()
+    return graph, logits
 
 
 class DecodeGraph:
@@ -314,19 +345,7 @@ class DecodeGraph:
         if not state.remaining:
             raise ValueError("Decode graph requires room for one more token")
 
-        # https://docs.pytorch.org/docs/2.14/notes/cuda.html#cuda-graphs
-        current = torch.cuda.current_stream(engine.device)
-        warmup = torch.cuda.Stream(device=engine.device)
-        warmup.wait_stream(current)
-        with torch.cuda.stream(warmup):
-            for _ in range(3):
-                state.position.fill_(len(primer))
-                self._step()
-        current.wait_stream(warmup)
-        state.position.fill_(len(primer))
-        self.graph = torch.cuda.CUDAGraph()
-        with torch.cuda.graph(self.graph):
-            self.logits = self._step()
+        self.graph, self.logits = _capture_decode(engine, state, len(primer), self._step)
 
     def _step(self):
         logits = self.engine._forward(self.token, self.state, prefill=False)
@@ -341,6 +360,8 @@ class DecodeGraph:
 
     @torch.inference_mode()
     def decode(self, token):
+        if self.state.staged_by is not None:
+            raise ValueError("A speculative block is staged")
         if not self.state.remaining:
             raise ValueError("KV cache capacity exceeded")
         if token is not self.token:
@@ -348,6 +369,61 @@ class DecodeGraph:
         self.graph.replay()
         self.state.remaining -= 1
         return self.logits
+
+
+class BlockDecodeGraph:
+    """Stage a causal block and advance the logical cache by its verified prefix."""
+
+    @torch.inference_mode()
+    def __init__(self, engine, state, primer, block_size, *, backend="flash"):
+        if backend not in ("flash", "tiled"):
+            raise ValueError("Use flash or tiled verification")
+        if backend == "tiled" and engine.decode_attention is None:
+            raise ValueError("Tiled verification requires a tiled decode engine")
+        if block_size < 2 or state.capacity - len(primer) < block_size:
+            raise ValueError("Decode block must contain at least two tokens and fit in cache capacity")
+        self.engine = engine
+        self.state = state
+        self.block_size = block_size
+        self.backend = backend
+        self._owner = object()
+        engine.prefill_into(primer, state)
+        self.tokens = torch.full((block_size,), int(primer[-1]), dtype=torch.long, device=engine.device)
+        self.predictions = torch.empty_like(self.tokens)
+        self.graph, self.logits = _capture_decode(engine, state, len(primer), self._step)
+
+    def _step(self):
+        logits = self.engine._forward(self.tokens, self.state, prefill=False, block_backend=self.backend)
+        torch.argmax(logits, dim=-1, out=self.predictions)
+        return logits
+
+    @torch.inference_mode()
+    def stage(self, tokens):
+        if self.state.staged_by is not None:
+            raise ValueError("A speculative block is staged")
+        if self.state.remaining < self.block_size:
+            raise ValueError("KV cache capacity exceeded")
+        ids = torch.as_tensor(tokens)
+        if ids.shape != self.tokens.shape or ids.dtype not in (torch.int32, torch.int64):
+            raise ValueError(f"Expected a block of {self.block_size} integer IDs")
+        if ids.device.type == "cpu" and (ids.min() < 0 or ids.max() >= self.engine.config.vocab_size):
+            raise ValueError("Token ID is outside the vocabulary")
+        self.tokens.copy_(ids, non_blocking=True)
+        self.graph.replay()
+        self.state.staged_by = self._owner
+        return self.logits
+
+    @torch.inference_mode()
+    def commit(self, count):
+        if self.state.staged_by is not self._owner:
+            raise ValueError("This graph has no staged block")
+        if type(count) is not int or not 0 <= count <= self.block_size:
+            raise ValueError("Invalid speculative prefix length")
+        # The suffix remains outside the visible prefix. Both attention paths
+        # mask it on reads and overwrite each slot before admitting it again.
+        self.state.position.sub_(self.block_size - count)
+        self.state.remaining -= count
+        self.state.staged_by = None
 
 
 class GraphQwen3Engine(CudaQwen3Engine):

@@ -113,4 +113,21 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
 
    Each input length must meet both latency thresholds and match the baseline output token hashes. Validate the selected patch on held-out prompts as well.
 
+## Run speculative verification
+
+The speculative benchmark uses the same pinned Qwen3 checkpoint. It compares target-only decode with block sizes 2, 4, and 8 on six coding and chat prompts and writes the first token mismatch if a continuation diverges. The tiled verifier shares the scalar attention reduction and masks staged tokens after the current query row. The graph advances the logical cache only for the verified prefix.
+
+```bash
+python speculative_bench.py --checkpoint checkpoints/Qwen3-0.6B \
+  --verification tiled --repeats 3 --warmup 2 --output results/speculative/ngram-tiled.json
+python -m tools.speculative_parity --checkpoint checkpoints/Qwen3-0.6B \
+  --verification tiled --output results/speculative/parity-tiled.json
+python -m tools.train_speculative_draft --checkpoint checkpoints/Qwen3-0.6B \
+  --output results/speculative/learned-draft.npz --report results/speculative/learned-training.json
+QWEN3_SPECULATIVE_DRAFT_WEIGHTS=results/speculative/learned-draft.npz \
+  python speculative_bench.py --checkpoint checkpoints/Qwen3-0.6B --verification tiled \
+  --draft-factory speculative_learned_draft:LearnedDraft --repeats 3 --warmup 2 \
+  --output results/speculative/learned-tiled.json
+```
+
 [Baseten engine](https://github.com/basetenlabs/deepseek-ultrafast) · [Qwen3-0.6B checkpoint](https://huggingface.co/Qwen/Qwen3-0.6B/tree/167b8104f88905a951069f5f95f9776908da5f68) · [SGLang benchmarks](https://github.com/sgl-project/sglang/blob/main/docs/docs/developer_guide/benchmark_and_profiling.mdx) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)

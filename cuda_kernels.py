@@ -41,19 +41,20 @@ def _residual_rms_norm_kernel(
 ):
     cols = tl.arange(0, BLOCK)
     mask = cols < WIDTH
-    residual = tl.load(Hidden + cols, mask, other=0).to(tl.float32)
-    update = tl.load(Update + cols, mask, other=0).to(tl.float32)
+    index = tl.program_id(0) * WIDTH + cols
+    residual = tl.load(Hidden + index, mask, other=0).to(tl.float32)
+    update = tl.load(Update + index, mask, other=0).to(tl.float32)
     values = tl.cast(residual + update, tl.bfloat16, fp_downcast_rounding="rtne")
-    tl.store(Sum + cols, values, mask)
+    tl.store(Sum + index, values, mask)
     normalized = _normalize(values.to(tl.float32), Weight, cols, mask, WIDTH, EPS)
-    tl.store(Norm + cols, normalized, mask)
+    tl.store(Norm + index, normalized, mask)
 
 
 def fused_residual_rms_norm(hidden, update, weight, eps):
-    """Add and normalize the hidden state for one decode token."""
+    """Add and normalize each row of a contiguous hidden state."""
     width = hidden.shape[-1]
     residual, normalized = torch.empty_like(hidden), torch.empty_like(hidden)
-    _residual_rms_norm_kernel[(1,)](
+    _residual_rms_norm_kernel[(hidden.numel() // width,)](
         hidden, update, weight, residual, normalized, width, triton.next_power_of_2(width), eps,
         num_warps=4, enable_fp_fusion=False,
     )
@@ -63,45 +64,56 @@ def fused_residual_rms_norm(hidden, update, weight, eps):
 @triton.jit
 def _qk_rms_norm_kernel(
     Q, K, QWeight, KWeight, QOut, KOut,
-    Q_HEADS: tl.constexpr, WIDTH: tl.constexpr, BLOCK: tl.constexpr, EPS: tl.constexpr,
+    Q_HEADS: tl.constexpr, K_HEADS: tl.constexpr, Q_STRIDE: tl.constexpr, K_STRIDE: tl.constexpr,
+    WIDTH: tl.constexpr, BLOCK: tl.constexpr, EPS: tl.constexpr,
 ):
-    head = tl.program_id(0)
+    head, row = tl.program_id(0), tl.program_id(1)
     cols = tl.arange(0, BLOCK)
     mask = cols < WIDTH
     if head < Q_HEADS:
-        values = tl.load(Q + head * WIDTH + cols, mask, other=0).to(tl.float32)
+        index = head * WIDTH + cols
+        values = tl.load(Q + row * Q_STRIDE + index, mask, other=0).to(tl.float32)
         result = _normalize(values, QWeight, cols, mask, WIDTH, EPS)
-        tl.store(QOut + head * WIDTH + cols, result, mask)
+        tl.store(QOut + row * Q_HEADS * WIDTH + index, result, mask)
     else:
         index = (head - Q_HEADS) * WIDTH + cols
-        values = tl.load(K + index, mask, other=0).to(tl.float32)
+        values = tl.load(K + row * K_STRIDE + index, mask, other=0).to(tl.float32)
         result = _normalize(values, KWeight, cols, mask, WIDTH, EPS)
-        tl.store(KOut + index, result, mask)
+        tl.store(KOut + row * K_HEADS * WIDTH + index, result, mask)
 
 
 def fused_qk_rms_norm(q, k, q_weight, k_weight, eps):
-    q_heads, width = q.shape[-2:]
-    q_out, k_out = torch.empty_like(q), torch.empty_like(k)
-    _qk_rms_norm_kernel[(q_heads + k.shape[-2],)](
-        q, k, q_weight, k_weight, q_out, k_out, q_heads, width, triton.next_power_of_2(width), eps,
+    rows, q_heads, width = q.shape
+    k_heads = k.shape[1]
+    q_out = torch.empty_like(q, memory_format=torch.contiguous_format)
+    k_out = torch.empty_like(k, memory_format=torch.contiguous_format)
+    _qk_rms_norm_kernel[(q_heads + k_heads, rows)](
+        q, k, q_weight, k_weight, q_out, k_out, q_heads, k_heads, q.stride(0), k.stride(0),
+        width, triton.next_power_of_2(width), eps,
         num_warps=1 if width <= 128 else 4, enable_fp_fusion=False,
     )
     return q_out, k_out
 
 
 @triton.jit
-def _swiglu_kernel(Gate, Up, Out, WIDTH: tl.constexpr, BLOCK: tl.constexpr):
+def _swiglu_kernel(
+    Gate, Up, Out, WIDTH: tl.constexpr, BLOCK: tl.constexpr, GATE_STRIDE: tl.constexpr, UP_STRIDE: tl.constexpr,
+):
+    row = tl.program_id(1)
     cols = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     mask = cols < WIDTH
-    gate = tl.load(Gate + cols, mask, other=0).to(tl.float32)
-    up = tl.load(Up + cols, mask, other=0).to(tl.float32)
+    gate = tl.load(Gate + row * GATE_STRIDE + cols, mask, other=0).to(tl.float32)
+    up = tl.load(Up + row * UP_STRIDE + cols, mask, other=0).to(tl.float32)
     activated = tl.cast(gate / (1 + tl.exp(-gate)), tl.bfloat16, fp_downcast_rounding="rtne")
-    tl.store(Out + cols, activated.to(tl.float32) * up, mask)
+    tl.store(Out + row * WIDTH + cols, activated.to(tl.float32) * up, mask)
 
 
 def fused_swiglu(gate, up):
     width = gate.shape[-1]
-    out = torch.empty_like(gate)
+    out = torch.empty_like(gate, memory_format=torch.contiguous_format)
     block = 256
-    _swiglu_kernel[(triton.cdiv(width, block),)](gate, up, out, width, block)
+    _swiglu_kernel[(triton.cdiv(width, block), gate.numel() // width)](
+        gate, up, out, width, block, gate.stride(-2) if gate.ndim > 1 else width,
+        up.stride(-2) if up.ndim > 1 else width,
+    )
     return out
