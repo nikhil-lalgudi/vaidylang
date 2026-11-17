@@ -67,7 +67,17 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
 
    [SGLang 0.5.23 release and install instructions](https://github.com/sgl-project/sglang/releases/tag/v0.5.23) · [SGLang static batch runner](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/benchmark/one_batch.py) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
-2. **Move the forward pass to CUDA.** Preserve the `prefill` and `decode` contract. Start with CUDA tensor ops, a preallocated device KV cache, and fused attention. Verify GPU FP32 against the reference, then introduce BF16 and compare against a BF16 reference with tolerances calibrated on real prompts. Keep token selection and position updates on the device when measuring decode.
+2. **Verify the eager CUDA engine.** The engine uses PyTorch CUDA tensor operations with a device KV cache and position tensor. BF16 uses FlashAttention 3 from the CUDA environment installed above. Use the full-prefix Transformers oracle for both precisions.
+
+   ```bash
+   python harness.py verify --cuda --checkpoint checkpoints/Qwen3-0.6B \
+     --oracle-device cuda --prompt-lengths 16 64 128 1024 4096 --new-tokens 4
+   python harness.py verify --cuda --dtype bfloat16 --checkpoint checkpoints/Qwen3-0.6B \
+     --oracle-device cuda --prompt-lengths 16 64 128 1024 4096 --new-tokens 4 \
+     --atol 0.5 --rtol 0.025
+   ```
+
+   The BF16 check allows for the logit differences observed between fused and eager attention and requires identical greedy IDs at each checked step. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
 
 3. **Profile and test one change per run.** Use Nsight Systems to see launch gaps, copies, and synchronization. Measure kernel bottlenecks with Nsight Compute. Test CUDA Graph replay with stable buffer addresses for launch-bound decode. Test packed QKV projections or fused residual and RMSNorm if the trace implicates those operations. Measure wall time for request latency and CUDA events for GPU time.
 

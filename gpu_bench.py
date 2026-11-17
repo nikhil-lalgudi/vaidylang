@@ -78,7 +78,17 @@ def sglang_tokens(runner, prepare_inputs, ids, annotate):
     finally:
         runner.cleanup(state)
 
-def benchmark_sglang(args):
+def cuda_tokens(engine, state, ids, annotate):
+    with annotate("prefill"):
+        token = engine.prefill_into(ids, state).argmax().reshape(1)
+        yield token
+    for _ in range(NEW_TOKENS - 1):
+        with annotate("decode"):
+            token = engine.decode(token, state).argmax().reshape(1)
+            yield token
+
+
+def benchmark_gpu(args):
     import torch
 
     if torch.version.cuda is None or torch.cuda.device_count() != 1:
@@ -86,7 +96,7 @@ def benchmark_sglang(args):
     if not torch.cuda.is_bf16_supported(including_emulation=False):
         raise ValueError("The GPU must support native BF16")
 
-    if version("sglang") != SGLANG_VERSION:
+    if args.engine == "sglang" and version("sglang") != SGLANG_VERSION:
         raise ValueError(f"Install the pinned SGLang {SGLANG_VERSION} release")
     if checkpoint_identity(args.checkpoint) != PINNED_CHECKPOINT:
         raise ValueError("Checkpoint configuration or weights differ from the pinned revision")
@@ -99,32 +109,46 @@ def benchmark_sglang(args):
     prompts = json.loads(FIXTURES.read_text())
     if tuple(map(len, prompts)) != PROMPT_LENGTHS:
         raise ValueError("Expected fixed input fixtures of 128, 1024, and 4096 tokens")
-    settings = {
-        "device": "cuda",
-        "dtype": "bfloat16",
-        "kv_cache_dtype": "bfloat16",
-        "tp_size": 1,
-        "max_running_requests": 1,
-        "disable_radix_cache": True,
-        "chunked_prefill_size": -1,
-        "speculative_algorithm": None,
-        "cuda_graph_max_bs_decode": 1,
-        "log_level": "warning",
-    }
-    runner, prepare_inputs = sglang_runner(args.checkpoint, settings)
     annotate = torch.cuda.nvtx.range if args.profile else lambda _: nullcontext()
-    try:
-        cases = benchmark_cases(
-            args, prompts, lambda ids: sglang_tokens(runner, prepare_inputs, ids, annotate),
-        )
-    finally:
-        if torch.distributed.is_initialized():
-            torch.distributed.destroy_process_group()
+    if args.engine == "sglang":
+        settings = {
+            "device": "cuda",
+            "dtype": "bfloat16",
+            "kv_cache_dtype": "bfloat16",
+            "tp_size": 1,
+            "max_running_requests": 1,
+            "disable_radix_cache": True,
+            "chunked_prefill_size": -1,
+            "speculative_algorithm": None,
+            "cuda_graph_max_bs_decode": 1,
+            "log_level": "warning",
+        }
+        runner, prepare_inputs = sglang_runner(args.checkpoint, settings)
+        try:
+            cases = benchmark_cases(
+                args, prompts, lambda ids: sglang_tokens(runner, prepare_inputs, ids, annotate),
+            )
+        finally:
+            if torch.distributed.is_initialized():
+                torch.distributed.destroy_process_group()
+        tag = f"sglang-{SGLANG_VERSION}"
+        implementation = {"engine": "sglang", "version": SGLANG_VERSION, "settings": settings}
+    else:
+        from cuda_engine import CudaQwen3Engine
+
+        engine = CudaQwen3Engine.from_checkpoint(args.checkpoint, dtype=torch.bfloat16)
+        states = {len(ids): engine.allocate_cache(len(ids) + NEW_TOKENS - 1) for ids in prompts}
+        with torch.inference_mode():
+            cases = benchmark_cases(
+                args, prompts, lambda ids: cuda_tokens(engine, states[len(ids)], ids, annotate),
+            )
+        tag = "cuda-eager"
+        implementation = {"engine": "cuda", "decode": "eager", "attention": "flash-attention-3"}
 
     return {
         "schema_version": 1,
-        "source_tag": f"sglang-{SGLANG_VERSION}",
-        "implementation": {"engine": "sglang", "version": SGLANG_VERSION, "settings": settings},
+        "source_tag": args.source_tag or tag,
+        "implementation": implementation,
         "run": {
             "checkpoint": PINNED_CHECKPOINT,
             "device": "cuda",
@@ -153,6 +177,8 @@ def benchmark_sglang(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--engine", choices=("sglang", "cuda"), default="sglang")
+    parser.add_argument("--source-tag")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=30)
@@ -164,7 +190,7 @@ def main():
     if args.repeats < 1 or args.warmup < 0:
         parser.error("Use at least one repeat and nonnegative warmups")
     try:
-        result = benchmark_sglang(args)
+        result = benchmark_gpu(args)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         with args.output.open("x") as output:
             json.dump(result, output, indent=2, allow_nan=False)

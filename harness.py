@@ -28,21 +28,21 @@ def workload(seed: int, length: int, new_tokens: int, vocab: int) -> tuple[np.nd
     return ids[:length], ids[length:]
 
 
-def hf_oracle(checkpoint: Path, device: str):
+def hf_oracle(checkpoint: Path, device: str, dtype: str = "float32"):
     try:
         import torch
         from transformers import AutoModelForCausalLM
     except ImportError as error:
         raise ValueError("Install PyTorch and transformers for the HF oracle") from error
     model = AutoModelForCausalLM.from_pretrained(
-        checkpoint, torch_dtype=torch.float32, local_files_only=True, attn_implementation="eager",
+        checkpoint, torch_dtype=getattr(torch, dtype), local_files_only=True, attn_implementation="eager",
         use_safetensors=True,
     ).eval().to(device)
 
     @torch.inference_mode()
     def logits(ids):
         input_ids = torch.tensor([ids], dtype=torch.long, device=device)
-        return model(input_ids=input_ids, use_cache=False).logits[0, -1].cpu().numpy()
+        return model(input_ids=input_ids, use_cache=False, logits_to_keep=1).logits[0, -1].float().cpu().numpy()
 
     return logits
 
@@ -54,6 +54,10 @@ def verify_sequence(engine, oracle, prompt, tail, greedy, atol, rtol) -> float:
     path = "greedy" if greedy else "teacher-forced"
     for step in range(len(tail) + 1):
         expected = oracle(history)
+        if not isinstance(actual, np.ndarray):
+            actual = actual.float().cpu().numpy()
+        if not isinstance(expected, np.ndarray):
+            expected = expected.float().cpu().numpy()
         if actual.shape != expected.shape:
             raise ValueError(f"Logit shapes differ for {path} at step {step}")
         if not (np.isfinite(actual).all() and np.isfinite(expected).all()):
@@ -81,7 +85,7 @@ def verify(args, engine) -> dict:
     if oracle_name == "hf":
         if args.checkpoint is None:
             raise ValueError("The HF oracle requires a checkpoint directory")
-        oracle = hf_oracle(args.checkpoint, args.oracle_device)
+        oracle = hf_oracle(args.checkpoint, args.oracle_device, args.dtype)
     else:
         def oracle(ids):
             return engine.prefill(ids, len(ids))[0]
@@ -92,7 +96,11 @@ def verify(args, engine) -> dict:
         forced = verify_sequence(engine, oracle, prompt, tail, False, args.atol, args.rtol)
         greedy = verify_sequence(engine, oracle, prompt, tail, True, args.atol, args.rtol)
         cases.append({"prompt_tokens": length, "teacher_forced_max_abs": forced, "greedy_max_abs": greedy})
-    return {"passed": True, "oracle": oracle_name, "steps_per_path": args.new_tokens, "cases": cases}
+    return {
+        "passed": True, "oracle": oracle_name, "steps_per_path": args.new_tokens, "cases": cases,
+        "device": "cuda" if args.cuda else "cpu", "dtype": args.dtype,
+        "atol": args.atol, "rtol": args.rtol,
+    }
 
 
 def timed_request(engine, ids, new_tokens: int) -> dict:
@@ -225,6 +233,8 @@ def parse_args(argv):
         if name == "verify":
             command.add_argument("--oracle", choices=("full", "hf"))
             command.add_argument("--oracle-device", default="cpu")
+            command.add_argument("--cuda", action="store_true", help="Verify the CUDA engine")
+            command.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32")
             command.add_argument("--atol", type=float, default=3e-4)
             command.add_argument("--rtol", type=float, default=3e-4)
         else:
@@ -250,7 +260,21 @@ def main(argv=None) -> int:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")
             if args.command == "bench" and (args.warmup < 0 or args.repeats < 1):
                 raise ValueError("Use nonnegative warmups and at least one measured repeat")
-            engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
+            if args.command == "verify" and args.cuda:
+                import torch
+                from cuda_engine import CudaQwen3Engine
+
+                dtype = getattr(torch, args.dtype)
+                if args.tiny and dtype != torch.float32:
+                    raise ValueError("Use the real checkpoint for BF16 attention verification")
+                engine = (
+                    CudaQwen3Engine(*tiny_weights(), dtype=dtype) if args.tiny
+                    else CudaQwen3Engine.from_checkpoint(args.checkpoint, dtype=dtype)
+                )
+            else:
+                if args.command == "verify" and args.dtype != "float32":
+                    raise ValueError("BF16 requires --cuda")
+                engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:
                 raise ValueError("Prompt and generated tokens exceed the model context limit")
             result = verify(args, engine) if args.command == "verify" else benchmark(args, engine)
