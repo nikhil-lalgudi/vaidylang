@@ -28,7 +28,17 @@ python harness.py compare --baseline results/baseline.json \
   --min-tpot-improvement-pct 5 --max-ttft-regression-pct 5
 ```
 
-## Check the public checkpoint
+## Inspect a checkpoint
+
+The shared checkpoint reader accepts the published DeepSeek V4.1 Flash config and Safetensors index. Inspect its metadata before downloading the weight shards.
+
+```bash
+python harness.py inspect-checkpoint --checkpoint checkpoints/DeepSeek-V4.1-Flash --metadata-only
+```
+
+`Checkpoint.open(path).read_tensor(name)` reads an individual local tensor with its stored encoding. DeepSeek's FP8 scales require PyTorch and Safetensors versions that support E8M0. The inference commands use Vaidylang's Qwen3 forward pass. DeepSeek execution requires a model-specific forward pass.
+
+## Check the public Qwen3 checkpoint
 
 On a machine with access to Hugging Face, download the pinned Qwen3-0.6B revision. An FP32 CPU oracle and candidate in the same process need several GB of RAM.
 
@@ -77,7 +87,7 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
      --atol 0.5 --rtol 0.025
    ```
 
-   The BF16 check allows for the logit differences observed between fused and eager attention and requires identical greedy IDs at each checked step. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
+   The BF16 check allows for the logit differences observed between fused and eager attention. At each checked step, the CUDA choice must be among the oracle's exact logit maxima. Use the same BF16 benchmark command with `--engine cuda` and a new output path. Token selection and the next decode input stay on the GPU, with a host copy used to time each emitted token.
 
 3. **Profile and test one change per run.** Add `--cuda-graph` to the CUDA verification and benchmark commands to replay decode with stable cache and token addresses. Capture each variant with Nsight Systems and `--profile` to mark the entire decode step.
 
@@ -87,6 +97,10 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
    ```
 
    The summary measures GPU kernel activity inside each decode range. The unprofiled benchmark JSON is the source of latency percentiles. Add `--fused-rms` to the BF16 verification and CUDA benchmark to use the Triton RMSNorm experiment. Add `--packed-projections` to combine Q/K/V and gate/up linear operations that use the same input.
+
+   With packing enabled, `--unpacked-prefill` uses separate projections for prefill. `--dense-prefill 4096` uses dense causal attention and separate KV writes starting at 4,096 input tokens. `--decode-splits 16` requests 16 FlashAttention KV splits for decode, and `--decode-splits 0` uses automatic scheduling. With fused RMSNorm enabled, `--fused-decode-pointwise` fuses residual adds with RMSNorm, Q and K normalization, and SwiGLU in decode.
+
+   `--tiled-decode-attention` uses an experimental two-kernel Triton path for BF16 decode. The first kernel applies RoPE, appends K/V, and computes partial attention. The second combines the partial results. This option uses its own tile sizes and requires `--decode-splits 0`.
 
 4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and token timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
 
@@ -98,5 +112,22 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
    ```
 
    Each input length must meet both latency thresholds and match the baseline output token hashes. Validate the selected patch on held-out prompts as well.
+
+## Run speculative verification
+
+The speculative benchmark uses the same pinned Qwen3 checkpoint. It compares target-only decode with block sizes 2, 4, and 8 on six coding and chat prompts and writes the first token mismatch if a continuation diverges. The tiled verifier shares the scalar attention reduction and masks staged tokens after the current query row. The graph advances the logical cache only for the verified prefix.
+
+```bash
+python speculative_bench.py --checkpoint checkpoints/Qwen3-0.6B \
+  --verification tiled --repeats 3 --warmup 2 --output results/speculative/ngram-tiled.json
+python -m tools.speculative_parity --checkpoint checkpoints/Qwen3-0.6B \
+  --verification tiled --output results/speculative/parity-tiled.json
+python -m tools.train_speculative_draft --checkpoint checkpoints/Qwen3-0.6B \
+  --output results/speculative/learned-draft.npz --report results/speculative/learned-training.json
+QWEN3_SPECULATIVE_DRAFT_WEIGHTS=results/speculative/learned-draft.npz \
+  python speculative_bench.py --checkpoint checkpoints/Qwen3-0.6B --verification tiled \
+  --draft-factory speculative_learned_draft:LearnedDraft --repeats 3 --warmup 2 \
+  --output results/speculative/learned-tiled.json
+```
 
 [Baseten engine](https://github.com/basetenlabs/deepseek-ultrafast) · [Qwen3-0.6B checkpoint](https://huggingface.co/Qwen/Qwen3-0.6B/tree/167b8104f88905a951069f5f95f9776908da5f68) · [SGLang benchmarks](https://github.com/sgl-project/sglang/blob/main/docs/docs/developer_guide/benchmark_and_profiling.mdx) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)

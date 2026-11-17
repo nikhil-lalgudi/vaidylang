@@ -1,0 +1,172 @@
+{
+  "verify-block8": {
+    "prompt": "python-tests",
+    "block_size": 8,
+    "verification_ranges": 30,
+    "profiled_wall_ms_p50": 2.8160125000000003,
+    "kernels_per_cycle_p50": 510.0,
+    "gpu_group_ms_p50": {
+      "projection_gemms": 0.8028530000000001,
+      "attention": 0.5963579999999999,
+      "tensor_copy": 0.211537,
+      "other": 0.4332989999999999
+    },
+    "top_kernels": [
+      {
+        "name": "device_kernel",
+        "symbol": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(i",
+        "mean_ms_per_cycle": 0.5119215999999998
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "symbol": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "mean_ms_per_cycle": 0.501329799999998
+      },
+      {
+        "name": "elementwise_kernel",
+        "symbol": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[la",
+        "mean_ms_per_cycle": 0.2115909999999938
+      },
+      {
+        "name": "_rms_norm_kernel",
+        "symbol": "_rms_norm_kernel",
+        "mean_ms_per_cycle": 0.1805679666666614
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "symbol": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "mean_ms_per_cycle": 0.1575243000000006
+      },
+      {
+        "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+        "symbol": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+        "mean_ms_per_cycle": 0.09173303333333334
+      },
+      {
+        "name": "elementwise_kernel",
+        "symbol": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lam",
+        "mean_ms_per_cycle": 0.07777230000000045
+      },
+      {
+        "name": "prepare_varlen_num_blocks_kernel",
+        "symbol": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, ",
+        "mean_ms_per_cycle": 0.07691586666666703
+      },
+      {
+        "name": "vectorized_elementwise_kernel",
+        "symbol": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)",
+        "mean_ms_per_cycle": 0.07646973333333357
+      },
+      {
+        "name": "elementwise_kernel",
+        "symbol": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloa",
+        "mean_ms_per_cycle": 0.07629053333333355
+      },
+      {
+        "name": "splitKreduce_kernel",
+        "symbol": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bo",
+        "mean_ms_per_cycle": 0.05255079999999996
+      },
+      {
+        "name": "reduce_kernel",
+        "symbol": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)",
+        "mean_ms_per_cycle": 0.0119072
+      },
+      {
+        "name": "indexSelectSmallIndex",
+        "symbol": "void at::native::<unnamed>::indexSelectSmallIndex<c10::BFloat16, long, unsigned int, (int)2, (int)2, (int)-2>(at::cuda::detail::TensorInfo<T1, T3>, at::cuda::de",
+        "mean_ms_per_cycle": 0.007620299999999998
+      },
+      {
+        "name": "vectorized_elementwise_kernel",
+        "symbol": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+        "mean_ms_per_cycle": 0.0026687999999999994
+      }
+    ]
+  },
+  "verify-tiled-block8": {
+    "prompt": "python-tests",
+    "block_size": 8,
+    "verification_ranges": 30,
+    "profiled_wall_ms_p50": 1.8157775,
+    "kernels_per_cycle_p50": 342.0,
+    "gpu_group_ms_p50": {
+      "projection_gemms": 0.8016705000000001,
+      "attention": 0.23708950000000006,
+      "tensor_copy": 0.0,
+      "other": 0.19408150000000007
+    },
+    "top_kernels": [
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "symbol": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+        "mean_ms_per_cycle": 0.5016390666666646
+      },
+      {
+        "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "symbol": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+        "mean_ms_per_cycle": 0.15509866666666763
+      },
+      {
+        "name": "_attention_tiles",
+        "symbol": "_attention_tiles",
+        "mean_ms_per_cycle": 0.1373867333333337
+      },
+      {
+        "name": "_residual_rms_norm_kernel",
+        "symbol": "_residual_rms_norm_kernel",
+        "mean_ms_per_cycle": 0.09401443333333269
+      },
+      {
+        "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+        "symbol": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+        "mean_ms_per_cycle": 0.09213286666666667
+      },
+      {
+        "name": "splitKreduce_kernel",
+        "symbol": "void cublasLt::splitKreduce_kernel<(int)32, (int)16, int, float, __nv_bfloat16, float, __nv_bfloat16, (bool)0, float, __nv_bfloat16, __nv_bfloat16, (bool)1, (bo",
+        "mean_ms_per_cycle": 0.05318979999999951
+      },
+      {
+        "name": "_combine_tiles",
+        "symbol": "_combine_tiles",
+        "mean_ms_per_cycle": 0.05263073333333347
+      },
+      {
+        "name": "_append_block",
+        "symbol": "_append_block",
+        "mean_ms_per_cycle": 0.04724823333333357
+      },
+      {
+        "name": "_qk_rms_norm_kernel",
+        "symbol": "_qk_rms_norm_kernel",
+        "mean_ms_per_cycle": 0.0400526333333335
+      },
+      {
+        "name": "_swiglu_kernel",
+        "symbol": "_swiglu_kernel",
+        "mean_ms_per_cycle": 0.03621789999999983
+      },
+      {
+        "name": "reduce_kernel",
+        "symbol": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)",
+        "mean_ms_per_cycle": 0.011783633333333331
+      },
+      {
+        "name": "indexSelectSmallIndex",
+        "symbol": "void at::native::<unnamed>::indexSelectSmallIndex<c10::BFloat16, long, unsigned int, (int)2, (int)2, (int)-2>(at::cuda::detail::TensorInfo<T1, T3>, at::cuda::de",
+        "mean_ms_per_cycle": 0.007651300000000001
+      },
+      {
+        "name": "vectorized_elementwise_kernel",
+        "symbol": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)",
+        "mean_ms_per_cycle": 0.002699733333333332
+      },
+      {
+        "name": "_rms_norm_kernel",
+        "symbol": "_rms_norm_kernel",
+        "mean_ms_per_cycle": 0.0017312666666666674
+      }
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "decode_steps": 762,
+  "wall_ms_p50": 2.0553359999999996,
+  "gpu_kernel_ms_p50": 1.580751,
+  "kernel_busy_fraction_p50": 0.7746757138594004,
+  "kernels_per_step_p50": 341.0,
+  "top_kernels": [
+    {
+      "name": "device_kernel",
+      "total_ms": 524.413007
+    },
+    {
+      "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_TNT",
+      "total_ms": 382.368421
+    },
+    {
+      "name": "nvjet_sm90_tst_64x8_64x16_4x1_v_bz_splitK_TNT",
+      "total_ms": 116.567943
+    },
+    {
+      "name": "_residual_rms_norm_kernel",
+      "total_ms": 74.312848
+    },
+    {
+      "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+      "total_ms": 68.173985
+    },
+    {
+      "name": "prepare_varlen_num_blocks_kernel",
+      "total_ms": 67.009137
+    },
+    {
+      "name": "splitKreduce_kernel",
+      "total_ms": 39.431452
+    },
+    {
+      "name": "_qk_rms_norm_kernel",
+      "total_ms": 29.302201
+    }
+  ]
+}

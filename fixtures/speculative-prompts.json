@@ -1,0 +1,71 @@
+[
+  {
+    "id": "python-tests",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Add pytest tests for the function below. Cover a normal identifier, mixed-case names with surrounding spaces, repeated spaces, and strings that contain no letters or digits. Show just the test file.\n\n```python\nimport re\n\ndef normalize_slug(title: str) -> str:\n    slug = re.sub(r'[^a-z0-9]+', '-', title.strip().lower()).strip('-')\n    if not slug:\n        raise ValueError('empty slug')\n    return slug\n```"
+      }
+    ]
+  },
+  {
+    "id": "sql-report",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a PostgreSQL query for a monthly order report. The table is orders(id bigint, customer_id bigint, created_at timestamptz, status text, total_cents bigint). Show the last six complete calendar months in UTC, include months with zero paid orders, and rank customers within each month by paid revenue. Explain how the query handles ties, then show SQL."
+      }
+    ]
+  },
+  {
+    "id": "typescript-completion",
+    "category": "coding",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a TypeScript implementation of a small in-memory task queue. Each task has id, title, and completed. Create tasks with completed=false, update the title or completion status by id, and delete tasks by id. Update and delete should return whether the task exists. Return just the code."
+      }
+    ],
+    "continuation": "```typescript\ntype Task = {\n  id: string;\n  title: string;\n  completed: boolean;\n};\n\nclass TaskQueue {\n  private readonly tasks = new Map<string, Task>();\n\n  create(id: string, title: string): Task {\n    const task = { id, title, completed: false };\n    this.tasks.set(id, task);\n    return task;\n  }\n\n"
+  },
+  {
+    "id": "team-update",
+    "category": "chat",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Turn these notes into a short update I can post to my team. We closed 14 of 18 migration tickets, moved the remaining four to next week, and discovered that our old export changes the case of account IDs. Priya is checking whether customers rely on that behavior. Deploy moved from Thursday to Tuesday. Add a short list of next steps."
+      }
+    ]
+  },
+  {
+    "id": "garden-plan",
+    "category": "chat",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Help me plan a small container garden for my apartment balcony. I have three pots, morning sun for about four hours, and only ten minutes most days for watering and maintenance. Suggest a useful mix of herbs and vegetables, and give me a simple plan for the first weekend."
+      }
+    ]
+  },
+  {
+    "id": "support-followup",
+    "category": "chat",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Help me reply to a customer who received the right desk but the wrong set of assembly screws. We have the right screws in stock, and the replacement package can ship tomorrow. I need their shipping address before creating the shipment."
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! Thanks for letting us know about the screws in your order. We can send the correct set tomorrow. Could you confirm the best shipping address for the replacement?"
+      },
+      {
+        "role": "user",
+        "content": "That sounds too casual. Please rewrite it in a warmer, professional tone. Acknowledge that the desk is unusable until they get the right screws, avoid promising a delivery date, and keep it under 120 words."
+      }
+    ]
+  }
+]

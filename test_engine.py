@@ -9,7 +9,7 @@ from unittest.mock import patch
 import numpy as np
 
 from engine import Qwen3Engine, read_weights, tiny_weights
-from harness import compare, timed_request
+from harness import compare, timed_request, verify_sequence
 
 
 def write_checkpoint_weights(path, tensors):
@@ -116,6 +116,36 @@ class EngineTests(unittest.TestCase):
                     }],
                 }))
             self.assertTrue(compare(args)["passed"])
+
+
+class ParityTests(unittest.TestCase):
+    class FixedLogits:
+        def __init__(self, logits):
+            self.logits = np.array(logits, dtype=np.float32)
+
+        def prefill(self, ids, capacity):
+            return self.logits, None
+
+        def decode(self, token, state):
+            return self.logits
+
+    def test_forced_parity_accepts_an_exact_oracle_tie(self):
+        engine = self.FixedLogits([10.4375, 10.5, 0.0])
+        expected = np.array([10.5, 10.5, 0.0], dtype=np.float32)
+        error = verify_sequence(engine, lambda _: expected, np.array([1]), [2], False, 0.5, 0.025)
+        self.assertEqual(error, 0.0625)
+
+    def test_forced_parity_rejects_a_near_tie(self):
+        engine = self.FixedLogits([10.4375, 10.5, 0.0])
+        expected = np.array([10.5, 10.4375, 0.0], dtype=np.float32)
+        with self.assertRaisesRegex(ValueError, "teacher-forced parity failed"):
+            verify_sequence(engine, lambda _: expected, np.array([1]), [2], False, 0.5, 0.025)
+
+    def test_forced_parity_checks_all_logits_when_the_oracle_ties(self):
+        engine = self.FixedLogits([10.4375, 10.5, -1.0])
+        expected = np.array([10.5, 10.5, 0.0], dtype=np.float32)
+        with self.assertRaisesRegex(ValueError, "teacher-forced parity failed"):
+            verify_sequence(engine, lambda _: expected, np.array([1]), [2], False, 0.5, 0.025)
 
 
 if __name__ == "__main__":

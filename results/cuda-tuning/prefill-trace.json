@@ -1,0 +1,1312 @@
+{
+  "packed": [
+    {
+      "prompt_tokens": 128,
+      "nvtx_wall_ms": 10.839415,
+      "attention_forward_ms": 0.477862,
+      "attention_schedule_ms": 0.082017,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.000864,
+          "bytes": 1024
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 0.477862,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.241633,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 84,
+          "total_ms": 0.236643,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() cons"
+        },
+        {
+          "name": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT",
+          "count": 28,
+          "total_ms": 0.231713,
+          "symbol_prefix": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_96x64_64x10_1x2_h_bz_TNN",
+          "count": 28,
+          "total_ms": 0.211268,
+          "symbol_prefix": "nvjet_sm90_tst_96x64_64x10_1x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN",
+          "count": 28,
+          "total_ms": 0.188001,
+          "symbol_prefix": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_64x64_64x13_2x1_v_bz_TNT",
+          "count": 28,
+          "total_ms": 0.175745,
+          "symbol_prefix": "nvjet_sm90_tst_64x64_64x13_2x1_v_bz_TNT"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.102497,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.09488,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFun"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.092321,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.085217,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.082017,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.01136,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.00224,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001312,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001152,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 1024,
+      "nvtx_wall_ms": 10.839074,
+      "attention_forward_ms": 1.355694,
+      "attention_schedule_ms": 0.083458,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.001216,
+          "bytes": 8192
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 1.355694,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT",
+          "count": 56,
+          "total_ms": 0.695653,
+          "symbol_prefix": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.684165,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT",
+          "count": 28,
+          "total_ms": 0.655365,
+          "symbol_prefix": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+          "count": 28,
+          "total_ms": 0.4673,
+          "symbol_prefix": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 84,
+          "total_ms": 0.399139,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() cons"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.310561,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.303267,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFun"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.169634,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.096161,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.083458,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.012224,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.003104,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00144,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 4096,
+      "nvtx_wall_ms": 25.784492,
+      "attention_forward_ms": 9.970545,
+      "attention_schedule_ms": 0.104481,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.002432,
+          "bytes": 32768
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 9.970545,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+          "count": 112,
+          "total_ms": 6.888151,
+          "symbol_prefix": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 2.288597,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 84,
+          "total_ms": 1.517481,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::direct_copy_kernel_cuda(at::TensorIteratorBase &)::[lambda() (instance 3)]::operator ()() cons"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 1.223047,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const"
+        },
+        {
+          "name": "elementwise_kernel",
+          "count": 28,
+          "total_ms": 1.180144,
+          "symbol_prefix": "void at::native::elementwise_kernel<(int)128, (int)4, void at::native::gpu_kernel_impl_nocast<at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFun"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.41981,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.104481,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.096193,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.010656,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.005984,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00224,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001152,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    }
+  ],
+  "unpacked_prefill": [
+    {
+      "prompt_tokens": 128,
+      "nvtx_wall_ms": 10.331156,
+      "attention_forward_ms": 0.471299,
+      "attention_schedule_ms": 0.081344,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.000832,
+          "bytes": 1024
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 0.471299,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN",
+          "count": 84,
+          "total_ms": 0.466629,
+          "symbol_prefix": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN",
+          "count": 56,
+          "total_ms": 0.335266,
+          "symbol_prefix": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.237313,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT",
+          "count": 28,
+          "total_ms": 0.229249,
+          "symbol_prefix": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN",
+          "count": 28,
+          "total_ms": 0.162016,
+          "symbol_prefix": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.09216,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.084289,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.081344,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.064803,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.049632,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.0112,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.00224,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00128,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 1024,
+      "nvtx_wall_ms": 10.041032,
+      "attention_forward_ms": 1.324074,
+      "attention_schedule_ms": 0.082497,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.001216,
+          "bytes": 8192
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002176,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 1.324074,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT",
+          "count": 112,
+          "total_ms": 1.075176,
+          "symbol_prefix": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT",
+          "count": 56,
+          "total_ms": 0.735364,
+          "symbol_prefix": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.687169,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT",
+          "count": 28,
+          "total_ms": 0.279394,
+          "symbol_prefix": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.16685,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.141025,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.132288,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.096321,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.082497,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011584,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.003104,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001568,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 4096,
+      "nvtx_wall_ms": 22.629593,
+      "attention_forward_ms": 9.924331,
+      "attention_schedule_ms": 0.103458,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.002432,
+          "bytes": 32768
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 9.924331,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+          "count": 196,
+          "total_ms": 6.937559,
+          "symbol_prefix": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 2.268494,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.591142,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.499746,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.412802,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.103458,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.095104,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011008,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.00608,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.002272,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    }
+  ],
+  "dense_prefill": [
+    {
+      "prompt_tokens": 128,
+      "nvtx_wall_ms": 11.501095,
+      "attention_forward_ms": 0.213698,
+      "attention_schedule_ms": 0,
+      "rotary_ms": 0.09533,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.000864,
+          "bytes": 1024
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        },
+        {
+          "kind": 8,
+          "count": 56,
+          "total_ms": 0.080128,
+          "bytes": 14680064
+        }
+      ],
+      "kernels": [
+        {
+          "name": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN",
+          "count": 84,
+          "total_ms": 0.466948,
+          "symbol_prefix": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN",
+          "count": 56,
+          "total_ms": 0.331425,
+          "symbol_prefix": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.239648,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT",
+          "count": 28,
+          "total_ms": 0.227777,
+          "symbol_prefix": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT"
+        },
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 0.213698,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN",
+          "count": 28,
+          "total_ms": 0.161985,
+          "symbol_prefix": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN"
+        },
+        {
+          "name": "rotary_embedding_kernel",
+          "count": 28,
+          "total_ms": 0.09533,
+          "symbol_prefix": "void rotary_embedding_kernel<c10::BFloat16, c10::BFloat16, (bool)1>(const long *, T1 *, T1 *, const T2 *, int, long, long, long, int, int, int)"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.091233,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.08704,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.063681,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.049312,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 29,
+          "total_ms": 0.032896,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011072,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.002272,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001504,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 1024,
+      "nvtx_wall_ms": 12.071693,
+      "attention_forward_ms": 0.549508,
+      "attention_schedule_ms": 0,
+      "rotary_ms": 0.245218,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.001248,
+          "bytes": 8192
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002176,
+          "bytes": 8
+        },
+        {
+          "kind": 8,
+          "count": 56,
+          "total_ms": 0.112673,
+          "bytes": 117440512
+        }
+      ],
+      "kernels": [
+        {
+          "name": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT",
+          "count": 112,
+          "total_ms": 1.075369,
+          "symbol_prefix": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT",
+          "count": 56,
+          "total_ms": 0.735754,
+          "symbol_prefix": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.684773,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 0.549508,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT",
+          "count": 28,
+          "total_ms": 0.277377,
+          "symbol_prefix": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT"
+        },
+        {
+          "name": "rotary_embedding_kernel",
+          "count": 28,
+          "total_ms": 0.245218,
+          "symbol_prefix": "void rotary_embedding_kernel<c10::BFloat16, c10::BFloat16, (bool)1>(const long *, T1 *, T1 *, const T2 *, int, long, long, long, int, int, int)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.153442,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.144032,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.13053,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.096545,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 29,
+          "total_ms": 0.032768,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011424,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.003104,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00144,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 4096,
+      "nvtx_wall_ms": 18.233667,
+      "attention_forward_ms": 3.955655,
+      "attention_schedule_ms": 0,
+      "rotary_ms": 0.880067,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.0024,
+          "bytes": 32768
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002176,
+          "bytes": 8
+        },
+        {
+          "kind": 8,
+          "count": 56,
+          "total_ms": 0.271906,
+          "bytes": 469762048
+        }
+      ],
+      "kernels": [
+        {
+          "name": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+          "count": 196,
+          "total_ms": 6.977849,
+          "symbol_prefix": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT"
+        },
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 3.955655,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 2.231097,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "rotary_embedding_kernel",
+          "count": 28,
+          "total_ms": 0.880067,
+          "symbol_prefix": "void rotary_embedding_kernel<c10::BFloat16, c10::BFloat16, (bool)1>(const long *, T1 *, T1 *, const T2 *, int, long, long, long, int, int, int)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.594178,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.554818,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.394307,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.095553,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 29,
+          "total_ms": 0.031968,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011392,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.006144,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.002208,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    }
+  ],
+  "dense_prefill_4096_fused_pointwise": [
+    {
+      "prompt_tokens": 128,
+      "nvtx_wall_ms": 10.098453,
+      "attention_forward_ms": 0.468294,
+      "attention_schedule_ms": 0.081473,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.000864,
+          "bytes": 1024
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN",
+          "count": 84,
+          "total_ms": 0.47162,
+          "symbol_prefix": "nvjet_sm90_tst_24x64_64x16_4x2_h_bz_TNN"
+        },
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 0.468294,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN",
+          "count": 56,
+          "total_ms": 0.337314,
+          "symbol_prefix": "nvjet_sm90_tst_72x64_64x12_4x2_h_bz_TNN"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.241923,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT",
+          "count": 28,
+          "total_ms": 0.232226,
+          "symbol_prefix": "nvjet_sm90_tst_64x16_64x16_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN",
+          "count": 28,
+          "total_ms": 0.163745,
+          "symbol_prefix": "nvjet_sm90_tst_48x64_64x15_4x2_h_bz_TNN"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.091521,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.084544,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.081473,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.0648,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.050176,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011968,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.002816,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00128,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 1024,
+      "nvtx_wall_ms": 10.743374,
+      "attention_forward_ms": 1.323718,
+      "attention_schedule_ms": 0.08272,
+      "rotary_ms": 0,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.001248,
+          "bytes": 8192
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002176,
+          "bytes": 8
+        }
+      ],
+      "kernels": [
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 1.323718,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT",
+          "count": 112,
+          "total_ms": 1.071264,
+          "symbol_prefix": "nvjet_sm90_tst_128x64_64x8_1x2_h_bz_TNT"
+        },
+        {
+          "name": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT",
+          "count": 56,
+          "total_ms": 0.739655,
+          "symbol_prefix": "nvjet_sm90_tst_192x128_64x5_1x2_h_bz_coopB_TNT"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 0.685031,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT",
+          "count": 28,
+          "total_ms": 0.280449,
+          "symbol_prefix": "nvjet_sm90_tst_128x128_64x6_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.16352,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.142049,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.132384,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.096641,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "prepare_varlen_num_blocks_kernel",
+          "count": 28,
+          "total_ms": 0.08272,
+          "symbol_prefix": "void flash::prepare_varlen_num_blocks_kernel<(int)1, (bool)1>(int, int, int, const int *, const int *, const int *, const int *, const int *, const int *, int, int, int, int, int, cutlass::FastDivmod,"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.011808,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.00304,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001408,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.00112,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    },
+    {
+      "prompt_tokens": 4096,
+      "nvtx_wall_ms": 18.361149,
+      "attention_forward_ms": 3.960132,
+      "attention_schedule_ms": 0,
+      "rotary_ms": 0.889638,
+      "memcpy": [
+        {
+          "kind": 1,
+          "count": 1,
+          "total_ms": 0.0024,
+          "bytes": 32768
+        },
+        {
+          "kind": 2,
+          "count": 1,
+          "total_ms": 0.002144,
+          "bytes": 8
+        },
+        {
+          "kind": 8,
+          "count": 56,
+          "total_ms": 0.273634,
+          "bytes": 469762048
+        }
+      ],
+      "kernels": [
+        {
+          "name": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT",
+          "count": 196,
+          "total_ms": 7.028639,
+          "symbol_prefix": "nvjet_sm90_tst_256x128_64x4_1x2_h_bz_coopA_TNT"
+        },
+        {
+          "name": "device_kernel",
+          "count": 28,
+          "total_ms": 3.960132,
+          "symbol_prefix": "void cutlass::device_kernel<flash::enable_sm90_or_later<flash::FlashAttnFwdSm90<flash::CollectiveMainloopFwdSm90<(int)2, cute::tuple<cute::C<(int)1>, cute::C<(int)1>, cute::C<(int)1>>, cute::tuple<cut"
+        },
+        {
+          "name": "_rms_norm_kernel",
+          "count": 113,
+          "total_ms": 2.230165,
+          "symbol_prefix": "_rms_norm_kernel"
+        },
+        {
+          "name": "rotary_embedding_kernel",
+          "count": 28,
+          "total_ms": 0.889638,
+          "symbol_prefix": "void rotary_embedding_kernel<c10::BFloat16, c10::BFloat16, (bool)1>(const long *, T1 *, T1 *, const T2 *, int, long, long, long, int, int, int)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.59431,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::BinaryFunctor<c10::BFloat16, c10::BFloat16, c10::BFloat16, at::native::binary_internal::MulFunctor<float>>, std::array<char *, (unsig"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 28,
+          "total_ms": 0.554468,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::<unnamed>::silu_kernel(at::TensorIteratorBase &)::[lambda() (instance 1)]::operator ()() const::[lambda() (instance 6)]::operator ()("
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 56,
+          "total_ms": 0.398052,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)8, at::native::CUDAFunctor_add<c10::BFloat16>, std::array<char *, (unsigned long)3>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT",
+          "count": 1,
+          "total_ms": 0.095969,
+          "symbol_prefix": "nvjet_sm90_tst_384x8_64x4_2x1_v_bz_TNT"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 29,
+          "total_ms": 0.032256,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::FillFunctor<int>, std::array<char *, (unsigned long)1>, (bool)0>(int, T2, T3)"
+        },
+        {
+          "name": "reduce_kernel",
+          "count": 1,
+          "total_ms": 0.01184,
+          "symbol_prefix": "void at::native::reduce_kernel<(int)512, (int)1, at::native::ReduceOp<c10::BFloat16, at::native::ArgMaxOps<float>, unsigned int, long, (int)4, (int)4>>(T3)"
+        },
+        {
+          "name": "vectorized_gather_kernel",
+          "count": 1,
+          "total_ms": 0.006112,
+          "symbol_prefix": "void at::native::vectorized_gather_kernel<(int)16, long>(char *, char *, T2 *, int, long, long, long, long, bool)"
+        },
+        {
+          "name": "vectorized_elementwise_kernel",
+          "count": 1,
+          "total_ms": 0.001632,
+          "symbol_prefix": "void at::native::vectorized_elementwise_kernel<(int)4, at::native::CUDAFunctorOnSelf_add<int>, std::array<char *, (unsigned long)2>, (bool)0>(int, T2, T3)"
+        }
+      ]
+    }
+  ]
+}

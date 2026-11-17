@@ -11,6 +11,7 @@ from time import perf_counter_ns
 
 import numpy as np
 
+from checkpoint import Checkpoint
 from engine import Qwen3Engine, tiny_weights
 
 
@@ -66,12 +67,15 @@ def verify_sequence(engine, oracle, prompt, tail, greedy, atol, rtol) -> float:
         max_error = max(max_error, error)
         expected_id = int(expected.argmax())
         actual_id = int(actual.argmax())
-        if not np.allclose(actual, expected, atol=atol, rtol=rtol) or actual_id != expected_id:
+        if not np.allclose(actual, expected, atol=atol, rtol=rtol) or expected[actual_id] != expected[expected_id]:
             top_two = np.partition(expected, -2)[-2:]
+            rank = 1 + np.count_nonzero(expected > expected[actual_id])
             raise ValueError(
                 f"{path} parity failed at prompt length {len(prompt)}, step {step}. "
                 f"Max absolute error {error:.3g}, candidate token {actual_id}, "
-                f"oracle token {expected_id}, oracle top-2 margin {float(np.ptp(top_two)):.3g}."
+                f"oracle token {expected_id}, candidate oracle rank {rank}, "
+                f"oracle logits {float(expected[actual_id])!r} and {float(expected[expected_id])!r}, "
+                f"oracle top-2 margin {float(np.ptp(top_two)):.3g}."
             )
         if step < len(tail):
             token = actual_id if greedy else int(tail[step])
@@ -101,6 +105,10 @@ def verify(args, engine) -> dict:
         "device": "cuda" if args.cuda else "cpu", "dtype": args.dtype,
         "atol": args.atol, "rtol": args.rtol, "cuda_graph": args.cuda_graph,
         "fused_rms": args.fused_rms, "packed_projections": args.packed_projections,
+        "unpacked_prefill": args.unpacked_prefill,
+        "dense_prefill": args.dense_prefill, "decode_splits": args.decode_splits,
+        "fused_decode_pointwise": args.fused_decode_pointwise,
+        "tiled_decode": args.tiled_decode,
     }
 
 
@@ -239,12 +247,24 @@ def parse_args(argv):
             command.add_argument("--cuda-graph", action="store_true", help="Verify CUDA Graph replay")
             command.add_argument("--fused-rms", action="store_true", help="Verify fused BF16 RMSNorm")
             command.add_argument("--packed-projections", action="store_true", help="Verify packed linear projections")
+            command.add_argument("--unpacked-prefill", action="store_true", help="Use packed projections only for decode")
+            command.add_argument(
+                "--dense-prefill", type=int, nargs="?", const=1, default=0, metavar="MIN_TOKENS",
+                help="Verify dense prefill attention at or above this length",
+            )
+            command.add_argument("--decode-splits", type=int, default=0, help="FlashAttention KV splits for decode (0 for automatic)")
+            command.add_argument("--fused-decode-pointwise", action="store_true", help="Verify fused decode normalizations and activation")
+            command.add_argument("--tiled-decode-attention", dest="tiled_decode", action="store_true", help="Verify tiled Triton attention")
             command.add_argument("--atol", type=float, default=3e-4)
             command.add_argument("--rtol", type=float, default=3e-4)
         else:
             command.add_argument("--warmup", type=int, default=3)
             command.add_argument("--repeats", type=int, default=20)
             command.add_argument("--source-tag", default="working-tree")
+    inspection = commands.add_parser("inspect-checkpoint", help="Read checkpoint config and Safetensors layout")
+    inspection.add_argument("--checkpoint", type=Path, required=True)
+    inspection.add_argument("--metadata-only", action="store_true", help="Inspect the index before downloading weight shards")
+    inspection.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")
     comparison.add_argument("--baseline", type=Path, required=True)
     comparison.add_argument("--candidate", type=Path, required=True)
@@ -259,6 +279,8 @@ def main(argv=None) -> int:
     try:
         if args.command == "compare":
             result = compare(args)
+        elif args.command == "inspect-checkpoint":
+            result = Checkpoint.open(args.checkpoint, metadata_only=args.metadata_only).describe()
         else:
             if args.seed < 0 or args.new_tokens < 2 or min(args.prompt_lengths) < 1:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")
@@ -277,13 +299,21 @@ def main(argv=None) -> int:
                 options = {
                     "dtype": dtype, "fused_rms": args.fused_rms,
                     "packed_projections": args.packed_projections,
+                    "unpacked_prefill": args.unpacked_prefill,
+                    "dense_prefill": args.dense_prefill, "decode_splits": args.decode_splits,
+                    "fused_decode_pointwise": args.fused_decode_pointwise,
+                    "tiled_decode": args.tiled_decode,
                 }
                 engine = (
                     engine_type(*tiny_weights(), **options) if args.tiny
                     else engine_type.from_checkpoint(args.checkpoint, **options)
                 )
             else:
-                if args.command == "verify" and (args.dtype != "float32" or args.cuda_graph or args.fused_rms or args.packed_projections):
+                if args.command == "verify" and (
+                    args.dtype != "float32" or args.cuda_graph or args.fused_rms
+                    or args.packed_projections or args.unpacked_prefill or args.dense_prefill or args.decode_splits
+                    or args.fused_decode_pointwise or args.tiled_decode
+                ):
                     raise ValueError("CUDA verification options require --cuda")
                 engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:

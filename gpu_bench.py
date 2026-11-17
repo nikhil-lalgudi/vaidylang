@@ -145,7 +145,10 @@ def benchmark_gpu(args):
 
         engine = CudaQwen3Engine.from_checkpoint(
             args.checkpoint, dtype=torch.bfloat16, fused_rms=args.fused_rms,
-            packed_projections=args.packed_projections,
+            packed_projections=args.packed_projections, unpacked_prefill=args.unpacked_prefill,
+            dense_prefill=args.dense_prefill, decode_splits=args.decode_splits,
+            fused_decode_pointwise=args.fused_decode_pointwise,
+            tiled_decode=args.tiled_decode,
         )
         states = {len(ids): engine.allocate_cache(len(ids) + NEW_TOKENS - 1) for ids in prompts}
         graphs = {
@@ -162,10 +165,25 @@ def benchmark_gpu(args):
             tag += "-fused-rms"
         if args.packed_projections:
             tag += "-packed"
+        if args.unpacked_prefill:
+            tag += "-unpacked-prefill"
+        if args.dense_prefill:
+            tag += f"-dense-prefill-{args.dense_prefill}"
+        if args.decode_splits:
+            tag += f"-splits-{args.decode_splits}"
+        if args.fused_decode_pointwise:
+            tag += "-fused-pointwise"
+        if args.tiled_decode:
+            tag += "-tiled-decode"
         implementation = {
             "engine": "cuda", "decode": mode, "attention": "flash-attention-3",
             "rms_norm": "triton" if args.fused_rms else "torch",
             "packed_projections": args.packed_projections,
+            "unpacked_prefill": args.unpacked_prefill,
+            "dense_prefill": args.dense_prefill,
+            "decode_splits": args.decode_splits,
+            "fused_decode_pointwise": args.fused_decode_pointwise,
+            "decode_attention": "triton-tiled" if args.tiled_decode else "flash-attention-3",
         }
 
     return {
@@ -203,6 +221,14 @@ def main():
     parser.add_argument("--engine", choices=("sglang", "cuda"), default="sglang")
     parser.add_argument("--source-tag")
     parser.add_argument("--packed-projections", action="store_true", help="Pack linear projections that share input")
+    parser.add_argument("--unpacked-prefill", action="store_true", help="Use packed projections only for decode")
+    parser.add_argument(
+        "--dense-prefill", type=int, nargs="?", const=1, default=0, metavar="MIN_TOKENS",
+        help="Run dense prefill attention with separate KV writes at or above this length",
+    )
+    parser.add_argument("--decode-splits", type=int, default=0, help="FlashAttention KV splits for decode (0 for automatic)")
+    parser.add_argument("--fused-decode-pointwise", action="store_true", help="Fuse decode normalization and activation kernels")
+    parser.add_argument("--tiled-decode-attention", dest="tiled_decode", action="store_true", help="Use tiled Triton attention in decode")
     parser.add_argument("--fused-rms", action="store_true", help="Use the fused BF16 RMSNorm kernel")
     parser.add_argument("--cuda-graph", action="store_true", help="Replay the CUDA engine decode step")
     parser.add_argument("--checkpoint", type=Path, required=True)
@@ -211,8 +237,13 @@ def main():
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--profile", action="store_true", help="Label prefill and decode in an Nsight trace")
     args = parser.parse_args()
-    if (args.cuda_graph or args.fused_rms or args.packed_projections) and args.engine != "cuda":
+    if args.engine != "cuda" and (
+        args.cuda_graph or args.fused_rms or args.packed_projections or args.dense_prefill or args.decode_splits
+        or args.fused_decode_pointwise or args.tiled_decode
+    ):
         parser.error("CUDA optimization options require --engine cuda")
+    if args.unpacked_prefill and not args.packed_projections:
+        parser.error("--unpacked-prefill requires --packed-projections")
     if args.output.exists():
         parser.error(f"{args.output} already exists")
     if args.repeats < 1 or args.warmup < 0:

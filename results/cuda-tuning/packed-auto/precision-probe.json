@@ -1,0 +1,178 @@
+[
+  {
+    "prompt_tokens": 1024,
+    "step": 100,
+    "cached_cuda_vs_hf_bf16": {
+      "max_abs": 0.5625,
+      "violating_logits": 1,
+      "worst_excess_id": 54404,
+      "candidate_logit": 0.5546875,
+      "oracle_logit": 0.052001953125,
+      "excess": 0.001385509967803955
+    },
+    "full_cuda_vs_hf_bf16": {
+      "max_abs": 0.5703125,
+      "violating_logits": 5,
+      "worst_excess_id": 54404,
+      "candidate_logit": 0.56640625,
+      "oracle_logit": 0.052001953125,
+      "excess": 0.013104259967803955
+    },
+    "cached_cuda_vs_full_cuda": {
+      "max_abs": 0.1875,
+      "violating_logits": 0,
+      "worst_excess_id": 97907,
+      "candidate_logit": -0.01202392578125,
+      "oracle_logit": 0.13671875,
+      "excess": -0.35467529296875
+    },
+    "cached_cuda_vs_hf_fp32": {
+      "max_abs": 0.20754241943359375,
+      "violating_logits": 0,
+      "worst_excess_id": 90648,
+      "candidate_logit": 0.369140625,
+      "oracle_logit": 0.18708735704421997,
+      "excess": -0.3226239085197449
+    },
+    "hf_bf16_vs_hf_fp32": {
+      "max_abs": 0.4569222927093506,
+      "violating_logits": 0,
+      "worst_excess_id": 20634,
+      "candidate_logit": -1.984375,
+      "oracle_logit": -1.5274527072906494,
+      "excess": -0.08126401901245117
+    }
+  },
+  {
+    "prompt_tokens": 4096,
+    "step": 15,
+    "cached_cuda_vs_hf_bf16": {
+      "max_abs": 0.5205078125,
+      "violating_logits": 1,
+      "worst_excess_id": 9545,
+      "candidate_logit": 0.734375,
+      "oracle_logit": 0.2138671875,
+      "excess": 0.01516115665435791
+    },
+    "full_cuda_vs_hf_bf16": {
+      "max_abs": 0.3515625,
+      "violating_logits": 0,
+      "worst_excess_id": 85254,
+      "candidate_logit": 0.251953125,
+      "oracle_logit": -0.08056640625,
+      "excess": -0.16949462890625
+    },
+    "cached_cuda_vs_full_cuda": {
+      "max_abs": 0.28125,
+      "violating_logits": 0,
+      "worst_excess_id": 10335,
+      "candidate_logit": 0.052490234375,
+      "oracle_logit": -0.21484375,
+      "excess": -0.238037109375
+    },
+    "cached_cuda_vs_hf_fp32": {
+      "max_abs": 0.20143389701843262,
+      "violating_logits": 0,
+      "worst_excess_id": 14703,
+      "candidate_logit": -0.38671875,
+      "oracle_logit": -0.18536177277565002,
+      "excess": -0.30327704548835754
+    },
+    "hf_bf16_vs_hf_fp32": {
+      "max_abs": 0.6346902847290039,
+      "violating_logits": 10,
+      "worst_excess_id": 34672,
+      "candidate_logit": 0.036865234375,
+      "oracle_logit": 0.670599102973938,
+      "excess": 0.11696887016296387
+    }
+  },
+  {
+    "prompt_tokens": 4096,
+    "step": 18,
+    "cached_cuda_vs_hf_bf16": {
+      "max_abs": 0.59375,
+      "violating_logits": 1,
+      "worst_excess_id": 88335,
+      "candidate_logit": -4.3125,
+      "oracle_logit": -3.71875,
+      "excess": 0.0007812380790710449
+    },
+    "full_cuda_vs_hf_bf16": {
+      "max_abs": 0.6875,
+      "violating_logits": 21,
+      "worst_excess_id": 88335,
+      "candidate_logit": -4.40625,
+      "oracle_logit": -3.71875,
+      "excess": 0.09453123807907104
+    },
+    "cached_cuda_vs_full_cuda": {
+      "max_abs": 0.2265625,
+      "violating_logits": 0,
+      "worst_excess_id": 75701,
+      "candidate_logit": 0.640625,
+      "oracle_logit": 0.42578125,
+      "excess": -0.2958008050918579
+    },
+    "cached_cuda_vs_hf_fp32": {
+      "max_abs": 0.2532973289489746,
+      "violating_logits": 0,
+      "worst_excess_id": 29304,
+      "candidate_logit": 0.0289306640625,
+      "oracle_logit": -0.2230944186449051,
+      "excess": -0.25355231761932373
+    },
+    "hf_bf16_vs_hf_fp32": {
+      "max_abs": 0.5729284286499023,
+      "violating_logits": 3,
+      "worst_excess_id": 85942,
+      "candidate_logit": 0.205078125,
+      "oracle_logit": -0.3440830111503601,
+      "excess": 0.04055905342102051
+    }
+  },
+  {
+    "prompt_tokens": 4096,
+    "step": 21,
+    "cached_cuda_vs_hf_bf16": {
+      "max_abs": 0.9296875,
+      "violating_logits": 399,
+      "worst_excess_id": 66635,
+      "candidate_logit": 0.609375,
+      "oracle_logit": 1.5390625,
+      "excess": 0.3912109136581421
+    },
+    "full_cuda_vs_hf_bf16": {
+      "max_abs": 1.75,
+      "violating_logits": 18687,
+      "worst_excess_id": 61568,
+      "candidate_logit": -1.28125,
+      "oracle_logit": -3.03125,
+      "excess": 1.174218773841858
+    },
+    "cached_cuda_vs_full_cuda": {
+      "max_abs": 0.9755859375,
+      "violating_logits": 1903,
+      "worst_excess_id": 65575,
+      "candidate_logit": 0.1259765625,
+      "oracle_logit": 1.1015625,
+      "excess": 0.44804686307907104
+    },
+    "cached_cuda_vs_hf_fp32": {
+      "max_abs": 0.562474250793457,
+      "violating_logits": 0,
+      "worst_excess_id": 88335,
+      "candidate_logit": -3.890625,
+      "oracle_logit": -4.453099250793457,
+      "excess": -0.04885321855545044
+    },
+    "hf_bf16_vs_hf_fp32": {
+      "max_abs": 0.4962344169616699,
+      "violating_logits": 0,
+      "worst_excess_id": 66635,
+      "candidate_logit": 1.5390625,
+      "oracle_logit": 1.048247218132019,
+      "excess": -0.03539091348648071
+    }
+  }
+]
