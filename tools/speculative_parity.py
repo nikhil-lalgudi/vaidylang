@@ -178,6 +178,8 @@ def replay_case(engine, prompt, source, steps, oracles, atol, rtol, verification
     return {
         **source,
         "prompt_tokens": len(prompt),
+        "prompt_ids": prompt,
+        "scalar_output_ids": generated,
         "cuda_scalar_output_sha256": output_sha256,
         "recorded_cuda_scalar_output_reproduced": output_sha256 == source["recorded_cuda_scalar_output_sha256"],
         "steps": rows,
@@ -209,7 +211,7 @@ def main():
     held_out = json.loads((FINAL_TILED / "held-out-bf16-128-greedy.json").read_text())
     atol, rtol = held_out["atol"], held_out["rtol"]
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "checkpoint": PINNED_CHECKPOINT,
         "gpu": torch.cuda.get_device_name(),
         "torch": torch.__version__,
