@@ -47,10 +47,23 @@ def sdpa(q, k, v, *, causal, mask=None):
 
 class CudaQwen3Engine:
     @torch.inference_mode()
-    def __init__(self, config: Config, weights: dict, *, dtype, device="cuda"):
+    def __init__(self, config: Config, weights: dict, *, dtype, device="cuda", fused_rms=False, packed_projections=False):
         self.config = config
         self.device = torch.device(device)
         self.dtype = dtype
+        self.packed_projections = packed_projections
+        self.qkv_widths = (
+            config.num_attention_heads * config.head_dim,
+            config.num_key_value_heads * config.head_dim,
+            config.num_key_value_heads * config.head_dim,
+        )
+        self.norm = rms_norm
+        if fused_rms:
+            if dtype != torch.bfloat16:
+                raise ValueError("Fused RMSNorm requires BF16")
+            from cuda_kernels import fused_rms_norm
+
+            self.norm = fused_rms_norm
         self.flash_attention = None
         if dtype == torch.bfloat16:
             from sgl_kernel.flash_attn import flash_attn_with_kvcache
@@ -66,10 +79,18 @@ class CudaQwen3Engine:
         self.layers = []
         for index in range(config.num_hidden_layers):
             prefix = f"model.layers.{index}."
-            self.layers.append({
+            layer = {
                 name.removeprefix(prefix): value
                 for name, value in weights.items() if name.startswith(prefix)
-            })
+            }
+            if packed_projections:
+                layer["self_attn.qkv_proj.weight"] = torch.cat([
+                    layer.pop(f"self_attn.{name}_proj.weight") for name in ("q", "k", "v")
+                ])
+                layer["mlp.gate_up_proj.weight"] = torch.cat([
+                    layer.pop(f"mlp.{name}_proj.weight") for name in ("gate", "up")
+                ])
+            self.layers.append(layer)
 
         self.positions = torch.arange(config.max_position_embeddings, device=device)
         frequency = config.rope_theta ** (-torch.arange(
@@ -80,7 +101,7 @@ class CudaQwen3Engine:
         self.sin = angles.sin().to(dtype)
 
     @classmethod
-    def from_checkpoint(cls, path: Path, *, dtype, device="cuda"):
+    def from_checkpoint(cls, path: Path, *, dtype, device="cuda", fused_rms=False, packed_projections=False):
         config = Config.from_file(path / "config.json")
         weights = {}
         with safe_open(path / "model.safetensors", framework="pt", device=str(device)) as source:
@@ -89,7 +110,10 @@ class CudaQwen3Engine:
                 if tuple(tensor.shape) != shape:
                     raise ValueError(f"Incompatible weight {name}")
                 weights[name] = tensor
-        return cls(config, weights, device=device, dtype=dtype)
+        return cls(
+            config, weights, device=device, dtype=dtype,
+            fused_rms=fused_rms, packed_projections=packed_projections,
+        )
 
     @torch.inference_mode()
     def allocate_cache(self, capacity):
@@ -147,12 +171,19 @@ class CudaQwen3Engine:
 
         hidden = self.embeddings.index_select(0, ids)
         for index, w in enumerate(self.layers):
-            x = rms_norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
-            q = F.linear(x, w["self_attn.q_proj.weight"]).view(steps, c.num_attention_heads, c.head_dim)
-            k = F.linear(x, w["self_attn.k_proj.weight"]).view(steps, c.num_key_value_heads, c.head_dim)
-            v = F.linear(x, w["self_attn.v_proj.weight"]).view_as(k)
-            q = rms_norm(q, w["self_attn.q_norm.weight"], c.rms_norm_eps)
-            k = rms_norm(k, w["self_attn.k_norm.weight"], c.rms_norm_eps)
+            x = self.norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
+            if self.packed_projections:
+                q, k, v = F.linear(x, w["self_attn.qkv_proj.weight"]).split(self.qkv_widths, dim=-1)
+                q, k, v = q.contiguous(), k.contiguous(), v.contiguous()
+            else:
+                q = F.linear(x, w["self_attn.q_proj.weight"])
+                k = F.linear(x, w["self_attn.k_proj.weight"])
+                v = F.linear(x, w["self_attn.v_proj.weight"])
+            q = q.view(steps, c.num_attention_heads, c.head_dim)
+            k = k.view(steps, c.num_key_value_heads, c.head_dim)
+            v = v.view_as(k)
+            q = self.norm(q, w["self_attn.q_norm.weight"], c.rms_norm_eps)
+            k = self.norm(k, w["self_attn.k_norm.weight"], c.rms_norm_eps)
 
             keys, values = state.keys[index], state.values[index]
             if self.flash_attention is not None:
@@ -172,13 +203,16 @@ class CudaQwen3Engine:
                 )
 
             hidden = hidden + F.linear(joined.reshape(steps, -1), w["self_attn.o_proj.weight"])
-            x = rms_norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
-            gate = F.silu(F.linear(x, w["mlp.gate_proj.weight"]))
-            up = F.linear(x, w["mlp.up_proj.weight"])
-            hidden = hidden + F.linear(gate * up, w["mlp.down_proj.weight"])
+            x = self.norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
+            if self.packed_projections:
+                gate, up = F.linear(x, w["mlp.gate_up_proj.weight"]).chunk(2, dim=-1)
+            else:
+                gate = F.linear(x, w["mlp.gate_proj.weight"])
+                up = F.linear(x, w["mlp.up_proj.weight"])
+            hidden = hidden + F.linear(F.silu(gate) * up, w["mlp.down_proj.weight"])
 
         state.position.add_(steps)
-        return F.linear(rms_norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
+        return F.linear(self.norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
 
 
 class DecodeGraph:

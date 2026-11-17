@@ -62,3 +62,31 @@ class CudaEngineTests(unittest.TestCase):
                 torch.testing.assert_close(graph.decode(token), expected, atol=0, rtol=0)
                 self.assertEqual(graph.token.item(), expected.argmax().item())
             self.assertEqual(graph.state.position.item(), len(prompt) + len(continuation))
+
+    @unittest.skipUnless(find_spec("triton"), "requires Triton")
+    def test_fused_rms_norm_preserves_bf16_rounding(self):
+        from cuda_engine import rms_norm
+        from cuda_kernels import fused_rms_norm
+
+        generator = torch.Generator(device="cuda").manual_seed(7)
+        for width in (128, 1024):
+            x = torch.randn((3, 5, width), device="cuda", dtype=torch.bfloat16, generator=generator)
+            weight = torch.randn(width, device="cuda", dtype=torch.bfloat16, generator=generator)
+            torch.testing.assert_close(
+                fused_rms_norm(x, weight, 1e-6), rms_norm(x, weight, 1e-6), atol=0, rtol=0,
+            )
+
+    def test_packed_projections_preserve_prefill_and_decode_logits(self):
+        from cuda_engine import CudaQwen3Engine
+
+        config, weights = tiny_weights()
+        reference = CudaQwen3Engine(config, weights, dtype=torch.float32)
+        packed = CudaQwen3Engine(config, weights, dtype=torch.float32, packed_projections=True)
+        ids = [3, 1, 4, 1, 5]
+        expected, expected_state = reference.prefill(ids, capacity=7)
+        actual, actual_state = packed.prefill(ids, capacity=7)
+        torch.testing.assert_close(actual, expected, atol=2e-5, rtol=2e-5)
+        for token in (9, 2):
+            expected = reference.decode(token, expected_state)
+            actual = packed.decode(token, actual_state)
+            torch.testing.assert_close(actual, expected, atol=2e-5, rtol=2e-5)

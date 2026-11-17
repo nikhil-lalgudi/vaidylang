@@ -143,7 +143,10 @@ def benchmark_gpu(args):
     else:
         from cuda_engine import CudaQwen3Engine, DecodeGraph
 
-        engine = CudaQwen3Engine.from_checkpoint(args.checkpoint, dtype=torch.bfloat16)
+        engine = CudaQwen3Engine.from_checkpoint(
+            args.checkpoint, dtype=torch.bfloat16, fused_rms=args.fused_rms,
+            packed_projections=args.packed_projections,
+        )
         states = {len(ids): engine.allocate_cache(len(ids) + NEW_TOKENS - 1) for ids in prompts}
         graphs = {
             len(ids): DecodeGraph(engine, states[len(ids)], ids) for ids in prompts
@@ -155,7 +158,15 @@ def benchmark_gpu(args):
             )
         mode = "graph" if args.cuda_graph else "eager"
         tag = f"cuda-{mode}"
-        implementation = {"engine": "cuda", "decode": mode, "attention": "flash-attention-3"}
+        if args.fused_rms:
+            tag += "-fused-rms"
+        if args.packed_projections:
+            tag += "-packed"
+        implementation = {
+            "engine": "cuda", "decode": mode, "attention": "flash-attention-3",
+            "rms_norm": "triton" if args.fused_rms else "torch",
+            "packed_projections": args.packed_projections,
+        }
 
     return {
         "schema_version": 1,
@@ -191,6 +202,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--engine", choices=("sglang", "cuda"), default="sglang")
     parser.add_argument("--source-tag")
+    parser.add_argument("--packed-projections", action="store_true", help="Pack linear projections that share input")
+    parser.add_argument("--fused-rms", action="store_true", help="Use the fused BF16 RMSNorm kernel")
     parser.add_argument("--cuda-graph", action="store_true", help="Replay the CUDA engine decode step")
     parser.add_argument("--checkpoint", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -198,8 +211,8 @@ def main():
     parser.add_argument("--warmup", type=int, default=3)
     parser.add_argument("--profile", action="store_true", help="Label prefill and decode in an Nsight trace")
     args = parser.parse_args()
-    if args.cuda_graph and args.engine != "cuda":
-        parser.error("--cuda-graph requires --engine cuda")
+    if (args.cuda_graph or args.fused_rms or args.packed_projections) and args.engine != "cuda":
+        parser.error("CUDA optimization options require --engine cuda")
     if args.output.exists():
         parser.error(f"{args.output} already exists")
     if args.repeats < 1 or args.warmup < 0:

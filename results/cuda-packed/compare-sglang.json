@@ -1,0 +1,26 @@
+{
+  "passed": false,
+  "cases": [
+    {
+      "prompt_tokens": 128,
+      "matching_output": false,
+      "p50_tpot_improvement_pct": -12.805358932902,
+      "p95_ttft_regression_pct": -37.879031917036,
+      "passed": false
+    },
+    {
+      "prompt_tokens": 1024,
+      "matching_output": true,
+      "p50_tpot_improvement_pct": -8.601268697188,
+      "p95_ttft_regression_pct": -40.865935110798,
+      "passed": false
+    },
+    {
+      "prompt_tokens": 4096,
+      "matching_output": true,
+      "p50_tpot_improvement_pct": -12.508448631168,
+      "p95_ttft_regression_pct": 42.410866556436,
+      "passed": false
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "prompt_tokens": 128,
+  "first_divergence": {
+    "cuda_graph": {
+      "output_token_index": 0,
+      "sglang_token": 13,
+      "cuda_token": 315,
+      "hf_fp32_token": 315,
+      "sglang_margin_for_its_choice": 0.0,
+      "cuda_margin_for_its_choice": 0.0625,
+      "hf_fp32_margin_for_sglang_choice": -0.0537109375
+    },
+    "cuda_fused_rms": {
+      "output_token_index": 0,
+      "sglang_token": 13,
+      "cuda_token": 315,
+      "hf_fp32_token": 315,
+      "sglang_margin_for_its_choice": 0.0,
+      "cuda_margin_for_its_choice": 0.0625,
+      "hf_fp32_margin_for_sglang_choice": -0.0537109375
+    }
+  }
+}
