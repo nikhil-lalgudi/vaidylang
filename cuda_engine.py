@@ -47,10 +47,17 @@ def sdpa(q, k, v, *, causal, mask=None):
 
 class CudaQwen3Engine:
     @torch.inference_mode()
-    def __init__(self, config: Config, weights: dict, *, dtype, device="cuda"):
+    def __init__(self, config: Config, weights: dict, *, dtype, device="cuda", fused_rms=False):
         self.config = config
         self.device = torch.device(device)
         self.dtype = dtype
+        self.norm = rms_norm
+        if fused_rms:
+            if dtype != torch.bfloat16:
+                raise ValueError("Fused RMSNorm requires BF16")
+            from cuda_kernels import fused_rms_norm
+
+            self.norm = fused_rms_norm
         self.flash_attention = None
         if dtype == torch.bfloat16:
             from sgl_kernel.flash_attn import flash_attn_with_kvcache
@@ -80,7 +87,7 @@ class CudaQwen3Engine:
         self.sin = angles.sin().to(dtype)
 
     @classmethod
-    def from_checkpoint(cls, path: Path, *, dtype, device="cuda"):
+    def from_checkpoint(cls, path: Path, *, dtype, device="cuda", fused_rms=False):
         config = Config.from_file(path / "config.json")
         weights = {}
         with safe_open(path / "model.safetensors", framework="pt", device=str(device)) as source:
@@ -89,7 +96,7 @@ class CudaQwen3Engine:
                 if tuple(tensor.shape) != shape:
                     raise ValueError(f"Incompatible weight {name}")
                 weights[name] = tensor
-        return cls(config, weights, device=device, dtype=dtype)
+        return cls(config, weights, device=device, dtype=dtype, fused_rms=fused_rms)
 
     @torch.inference_mode()
     def allocate_cache(self, capacity):
@@ -147,12 +154,12 @@ class CudaQwen3Engine:
 
         hidden = self.embeddings.index_select(0, ids)
         for index, w in enumerate(self.layers):
-            x = rms_norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
+            x = self.norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
             q = F.linear(x, w["self_attn.q_proj.weight"]).view(steps, c.num_attention_heads, c.head_dim)
             k = F.linear(x, w["self_attn.k_proj.weight"]).view(steps, c.num_key_value_heads, c.head_dim)
             v = F.linear(x, w["self_attn.v_proj.weight"]).view_as(k)
-            q = rms_norm(q, w["self_attn.q_norm.weight"], c.rms_norm_eps)
-            k = rms_norm(k, w["self_attn.k_norm.weight"], c.rms_norm_eps)
+            q = self.norm(q, w["self_attn.q_norm.weight"], c.rms_norm_eps)
+            k = self.norm(k, w["self_attn.k_norm.weight"], c.rms_norm_eps)
 
             keys, values = state.keys[index], state.values[index]
             if self.flash_attention is not None:
@@ -172,13 +179,13 @@ class CudaQwen3Engine:
                 )
 
             hidden = hidden + F.linear(joined.reshape(steps, -1), w["self_attn.o_proj.weight"])
-            x = rms_norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
+            x = self.norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
             gate = F.silu(F.linear(x, w["mlp.gate_proj.weight"]))
             up = F.linear(x, w["mlp.up_proj.weight"])
             hidden = hidden + F.linear(gate * up, w["mlp.down_proj.weight"])
 
         state.position.add_(steps)
-        return F.linear(rms_norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
+        return F.linear(self.norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
 
 
 class DecodeGraph:

@@ -1,0 +1,38 @@
+{
+  "passed": true,
+  "oracle": "hf",
+  "steps_per_path": 4,
+  "cases": [
+    {
+      "prompt_tokens": 16,
+      "teacher_forced_max_abs": 0.21875,
+      "greedy_max_abs": 0.375
+    },
+    {
+      "prompt_tokens": 64,
+      "teacher_forced_max_abs": 0.2255859375,
+      "greedy_max_abs": 0.25
+    },
+    {
+      "prompt_tokens": 128,
+      "teacher_forced_max_abs": 0.25,
+      "greedy_max_abs": 0.3125
+    },
+    {
+      "prompt_tokens": 1024,
+      "teacher_forced_max_abs": 0.2890625,
+      "greedy_max_abs": 0.28125
+    },
+    {
+      "prompt_tokens": 4096,
+      "teacher_forced_max_abs": 0.21875,
+      "greedy_max_abs": 0.21875
+    }
+  ],
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "atol": 0.5,
+  "rtol": 0.025,
+  "cuda_graph": true,
+  "fused_rms": true
+}

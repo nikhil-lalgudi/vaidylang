@@ -100,6 +100,7 @@ def verify(args, engine) -> dict:
         "passed": True, "oracle": oracle_name, "steps_per_path": args.new_tokens, "cases": cases,
         "device": "cuda" if args.cuda else "cpu", "dtype": args.dtype,
         "atol": args.atol, "rtol": args.rtol, "cuda_graph": args.cuda_graph,
+        "fused_rms": args.fused_rms,
     }
 
 
@@ -236,6 +237,7 @@ def parse_args(argv):
             command.add_argument("--cuda", action="store_true", help="Verify the CUDA engine")
             command.add_argument("--dtype", choices=("float32", "bfloat16"), default="float32")
             command.add_argument("--cuda-graph", action="store_true", help="Verify CUDA Graph replay")
+            command.add_argument("--fused-rms", action="store_true", help="Verify fused BF16 RMSNorm")
             command.add_argument("--atol", type=float, default=3e-4)
             command.add_argument("--rtol", type=float, default=3e-4)
         else:
@@ -266,16 +268,18 @@ def main(argv=None) -> int:
                 from cuda_engine import CudaQwen3Engine, GraphQwen3Engine
 
                 dtype = getattr(torch, args.dtype)
+                if args.fused_rms and dtype != torch.bfloat16:
+                    raise ValueError("Fused RMSNorm requires BF16")
                 if args.tiny and dtype != torch.float32:
                     raise ValueError("Use the real checkpoint for BF16 attention verification")
                 engine_type = GraphQwen3Engine if args.cuda_graph else CudaQwen3Engine
                 engine = (
                     engine_type(*tiny_weights(), dtype=dtype) if args.tiny
-                    else engine_type.from_checkpoint(args.checkpoint, dtype=dtype)
+                    else engine_type.from_checkpoint(args.checkpoint, dtype=dtype, fused_rms=args.fused_rms)
                 )
             else:
-                if args.command == "verify" and (args.dtype != "float32" or args.cuda_graph):
-                    raise ValueError("BF16 and CUDA Graphs require --cuda")
+                if args.command == "verify" and (args.dtype != "float32" or args.cuda_graph or args.fused_rms):
+                    raise ValueError("BF16, CUDA Graphs, and fused RMSNorm require --cuda")
                 engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:
                 raise ValueError("Prompt and generated tokens exceed the model context limit")
