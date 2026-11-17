@@ -1,0 +1,35 @@
+{
+  "input_sha256": "f88d104ad2e12b102301374bc26be783b61cb0bbc30887440948b197663de461",
+  "packed_output_sha256": "aafc9fff285154c35228db4c7f85d93c11dca154f3e53144badfea4d08f1f094",
+  "tiled_output_sha256": "48b2cf531ae9f4d0b39489fca67fa00450726a54d6209884163cf4b81e23f169",
+  "first_packed_vs_tiled_divergence": 37,
+  "hf_bf16_common_prefix": [
+    {
+      "step": 0,
+      "cuda_tiled_id": 315,
+      "hf_bf16_argmax_id": 315,
+      "cuda_tiled_id_rank_in_hf": 1,
+      "cuda_tiled_id_logit_in_hf": 11.3125,
+      "hf_max": 11.3125,
+      "cuda_packed_id": 315
+    },
+    {
+      "step": 16,
+      "cuda_tiled_id": 576,
+      "hf_bf16_argmax_id": 4710,
+      "cuda_tiled_id_rank_in_hf": 2,
+      "cuda_tiled_id_logit_in_hf": 12.5625,
+      "hf_max": 12.625,
+      "cuda_packed_id": 576
+    },
+    {
+      "step": 37,
+      "cuda_tiled_id": 13,
+      "hf_bf16_argmax_id": 13,
+      "cuda_tiled_id_rank_in_hf": 1,
+      "cuda_tiled_id_logit_in_hf": 20.5,
+      "hf_max": 20.5,
+      "cuda_packed_id": 2621
+    }
+  ]
+}

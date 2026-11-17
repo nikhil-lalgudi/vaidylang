@@ -1,0 +1,61 @@
+{
+  "seed": 711,
+  "new_tokens": 128,
+  "atol": 0.5,
+  "rtol": 0.025,
+  "cases": [
+    {
+      "prompt_tokens": 128,
+      "prompt_sha256": "0c09baa9b990cc031ee251af905eb3481b9646d6a38c7c09082df6e2a714763c",
+      "cuda_output_sha256": "a916fb5b12b959d36dd33e10b26323e77b1569cc0e799e1315a3a69914953ba5",
+      "hf_output_sha256": "a916fb5b12b959d36dd33e10b26323e77b1569cc0e799e1315a3a69914953ba5",
+      "exact_matching_tokens": 128,
+      "argmax_disagreements_on_cuda_prefix": [],
+      "exact_tie_disagreements": 0,
+      "nonmax_disagreements": 0,
+      "logit_failure_steps": [],
+      "max_abs_logit_error": 0.328125,
+      "passed": true
+    },
+    {
+      "prompt_tokens": 1024,
+      "prompt_sha256": "fda309d63f55d6a3df4ea5b624ad0a5001ad7e9e569068290d827b0a477b56af",
+      "cuda_output_sha256": "ce0d28c6092014e56e4d6fa2eed6ade477752f254339768d7e46cdf030100aae",
+      "hf_output_sha256": "ce0d28c6092014e56e4d6fa2eed6ade477752f254339768d7e46cdf030100aae",
+      "exact_matching_tokens": 128,
+      "argmax_disagreements_on_cuda_prefix": [],
+      "exact_tie_disagreements": 0,
+      "nonmax_disagreements": 0,
+      "logit_failure_steps": [
+        91,
+        97,
+        100
+      ],
+      "max_abs_logit_error": 0.625,
+      "passed": false
+    },
+    {
+      "prompt_tokens": 4096,
+      "prompt_sha256": "54f310e7dfdb9b42e3d72e2044f43bc5121dc7b345188a65629acc3ad2be0d57",
+      "cuda_output_sha256": "5413ad2535db3cec7fbd46c570bd0a9d381995723217bcdb07e5746b3a0f59e5",
+      "hf_output_sha256": "5413ad2535db3cec7fbd46c570bd0a9d381995723217bcdb07e5746b3a0f59e5",
+      "exact_matching_tokens": 128,
+      "argmax_disagreements_on_cuda_prefix": [],
+      "exact_tie_disagreements": 0,
+      "nonmax_disagreements": 0,
+      "logit_failure_steps": [
+        18,
+        21
+      ],
+      "max_abs_logit_error": 1.671875,
+      "passed": false
+    }
+  ],
+  "cuda_options": {
+    "unpacked_prefill": true,
+    "dense_prefill": 4096,
+    "decode_splits": 16,
+    "fused_decode_pointwise": true
+  },
+  "passed": false
+}

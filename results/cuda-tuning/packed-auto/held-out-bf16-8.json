@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "oracle": "hf",
+  "steps_per_path": 8,
+  "cases": [
+    {
+      "prompt_tokens": 128,
+      "teacher_forced_max_abs": 0.359375,
+      "greedy_max_abs": 0.21875
+    },
+    {
+      "prompt_tokens": 1024,
+      "teacher_forced_max_abs": 0.265625,
+      "greedy_max_abs": 0.34375
+    },
+    {
+      "prompt_tokens": 4096,
+      "teacher_forced_max_abs": 0.2109375,
+      "greedy_max_abs": 0.203125
+    }
+  ],
+  "device": "cuda",
+  "dtype": "bfloat16",
+  "atol": 0.5,
+  "rtol": 0.025,
+  "cuda_graph": true,
+  "fused_rms": true,
+  "packed_projections": true
+}
