@@ -101,10 +101,14 @@ def timed_request(engine, ids, new_tokens: int) -> dict:
         token = int(engine.decode(token, state).argmax())
         times.append(perf_counter_ns())
         output.append(token)
+    return request_sample(started, times, output)
+
+
+def request_sample(started, times, output) -> dict:
     gaps = (np.diff(times) / 1e6).tolist()
     return {
         "ttft_ms": (times[0] - started) / 1e6,
-        "tpot_ms": (times[-1] - times[0]) / ((new_tokens - 1) * 1e6),
+        "tpot_ms": (times[-1] - times[0]) / ((len(output) - 1) * 1e6),
         "itl_ms": gaps,
         "e2e_ms": (times[-1] - started) / 1e6,
         "output_sha256": digest(output),
@@ -116,15 +120,28 @@ def percentiles(values) -> dict:
     return {"p50": float(p50), "p95": float(p95)}
 
 
+def checkpoint_identity(directory: Path) -> str:
+    with (directory / "config.json").open("rb") as config:
+        config_hash = hashlib.file_digest(config, "sha256").hexdigest()
+    with (directory / "model.safetensors").open("rb") as weights:
+        weight_hash = hashlib.file_digest(weights, "sha256").hexdigest()
+    return f"{config_hash}/{weight_hash}"
+
+
+def summarize_case(ids, new_tokens, samples) -> dict:
+    return {
+        "prompt_tokens": len(ids),
+        "input_sha256": digest(ids),
+        "ttft_ms": percentiles([sample["ttft_ms"] for sample in samples]),
+        "tpot_ms": percentiles([sample["tpot_ms"] for sample in samples]),
+        "itl_ms": percentiles([gap for sample in samples for gap in sample["itl_ms"]]),
+        "sequential_output_tps": 1000 * new_tokens * len(samples) / sum(s["e2e_ms"] for s in samples),
+        "samples": samples,
+    }
+
+
 def benchmark(args, engine) -> dict:
-    if args.checkpoint is None:
-        identity = "tiny-seed-7"
-    else:
-        with (args.checkpoint / "config.json").open("rb") as config:
-            config_hash = hashlib.file_digest(config, "sha256").hexdigest()
-        with (args.checkpoint / "model.safetensors").open("rb") as weights:
-            weight_hash = hashlib.file_digest(weights, "sha256").hexdigest()
-        identity = f"{config_hash}/{weight_hash}"
+    identity = "tiny-seed-7" if args.checkpoint is None else checkpoint_identity(args.checkpoint)
 
     cases = []
     for length in args.prompt_lengths:
@@ -132,15 +149,7 @@ def benchmark(args, engine) -> dict:
         for _ in range(args.warmup):
             timed_request(engine, ids, args.new_tokens)
         samples = [timed_request(engine, ids, args.new_tokens) for _ in range(args.repeats)]
-        cases.append({
-            "prompt_tokens": length,
-            "input_sha256": digest(ids),
-            "ttft_ms": percentiles([sample["ttft_ms"] for sample in samples]),
-            "tpot_ms": percentiles([sample["tpot_ms"] for sample in samples]),
-            "itl_ms": percentiles([gap for sample in samples for gap in sample["itl_ms"]]),
-            "sequential_output_tps": 1000 * args.new_tokens * len(samples) / sum(s["e2e_ms"] for s in samples),
-            "samples": samples,
-        })
+        cases.append(summarize_case(ids, args.new_tokens, samples))
 
     return {
         "schema_version": 1,

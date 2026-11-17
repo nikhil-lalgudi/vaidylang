@@ -46,20 +46,40 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
 
 ## Build the GPU engine in this order
 
-1. **Capture the baseline.** On one CUDA GPU with BF16 support, pin the model, SGLang revision, driver, and CUDA version. Collect a static batch-1 profile first. A SGLang installation provides the following entry point.
+1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a compatible CUDA 13 driver. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and streams 128 greedy tokens including after EOS.
 
    ```bash
-   python -m sglang.benchmark.one_batch \
-     --model-path checkpoints/Qwen3-0.6B --dtype bfloat16 \
-     --batch-size 1 --input-len 128 1024 4096 --output-len 128
+   uv pip install --prerelease=allow 'sglang==0.5.23'
+   CUDA_VISIBLE_DEVICES=0 python gpu_bench.py \
+     --checkpoint checkpoints/Qwen3-0.6B --output results/sglang-baseline.json
    ```
 
-   Use the static runs to locate expensive operators. Use the same serialized prompts and decode budgets for the eventual head-to-head comparison. Repeat on the same GPU with matching precision, cache reuse, and speculative decoding settings.
+   The runner uses the serialized input IDs in `fixtures/qwen3-0.6b-batch1.json` at 128, 1,024, and 4,096 tokens. It saves GPU UUID, driver and runtime versions, request percentiles, all 127 token gaps per request, and input and output hashes. TTFT and TPOT measure wall time at the Python streaming interface, including scheduling and delivery. Each streamed update must deliver exactly one token.
+
+   Capture a separate trace so profiling overhead stays out of the baseline JSON.
+
+   ```bash
+   CUDA_VISIBLE_DEVICES=0 nsys profile --trace=cuda,nvtx --sample=none \
+     --output=results/sglang-baseline python gpu_bench.py \
+     --checkpoint checkpoints/Qwen3-0.6B --repeats 1 \
+     --output results/sglang-profile-samples.json
+   ```
+
+   [SGLang 0.5.23 release and install instructions](https://github.com/sgl-project/sglang/releases/tag/v0.5.23) · [SGLang Engine API](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/entrypoints/engine.py) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
 2. **Move the forward pass to CUDA.** Preserve the `prefill` and `decode` contract. Start with CUDA tensor ops, a preallocated device KV cache, and fused attention. Verify GPU FP32 against the reference, then introduce BF16 and compare against a BF16 reference with tolerances calibrated on real prompts. Keep token selection and position updates on the device when measuring decode.
 
 3. **Profile and test one change per run.** Use Nsight Systems to see launch gaps, copies, and synchronization. Measure kernel bottlenecks with Nsight Compute. Test CUDA Graph replay with stable buffer addresses for launch-bound decode. Test packed QKV projections or fused residual and RMSNorm if the trace implicates those operations. Measure wall time for request latency and CUDA events for GPU time.
 
-4. **Validate a result on held-out prompts.** Preserve the baseline and run the same committed workloads before and after each patch. Save the change, hypothesis, parity output, benchmark JSON, and trace. A starting success target is at least 10% lower p50 TPOT at each batch-1 context length, with at most 5% worse p95 TTFT, compared with SGLang on the same GPU. For the serving comparison, use the same streaming client, prompt IDs, output caps, and request schedule on both servers. Measure concurrency and p95 inter-token latency before adding continuous batching or paged KV.
+4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and streaming timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
+
+   ```bash
+   python harness.py compare --baseline results/sglang-baseline.json \
+     --candidate results/candidate/bench.json \
+     --min-tpot-improvement-pct 10 --max-ttft-regression-pct 5 \
+     --output results/candidate/compare.json
+   ```
+
+   Each input length must meet both latency thresholds and match the baseline output token hashes. Validate the selected patch on held-out prompts as well.
 
 [Baseten engine](https://github.com/basetenlabs/deepseek-ultrafast) · [Qwen3-0.6B checkpoint](https://huggingface.co/Qwen/Qwen3-0.6B/tree/167b8104f88905a951069f5f95f9776908da5f68) · [SGLang benchmarks](https://github.com/sgl-project/sglang/blob/main/docs/docs/developer_guide/benchmark_and_profiling.mdx) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
