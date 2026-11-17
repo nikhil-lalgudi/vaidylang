@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from safetensors import safe_open
 
+from checkpoint import Checkpoint
 from engine import Config, weight_shapes
 
 
@@ -152,14 +153,17 @@ class CudaQwen3Engine:
         packed_projections=False, unpacked_prefill=False, dense_prefill=0, decode_splits=0,
         fused_decode_pointwise=False, tiled_decode=False,
     ):
-        config = Config.from_file(path / "config.json")
+        checkpoint = Checkpoint.open(path)
+        config = Config.from_mapping(checkpoint.config)
+        shapes = weight_shapes(config)
         weights = {}
-        with safe_open(path / "model.safetensors", framework="pt", device=str(device)) as source:
-            for name, shape in weight_shapes(config).items():
-                tensor = source.get_tensor(name)
-                if tuple(tensor.shape) != shape:
-                    raise ValueError(f"Incompatible weight {name}")
-                weights[name] = tensor
+        for shard, names in checkpoint.group_tensors(shapes).items():
+            with safe_open(shard, framework="pt", device=str(device)) as source:
+                for name in names:
+                    tensor = source.get_tensor(name)
+                    if tuple(tensor.shape) != shapes[name]:
+                        raise ValueError(f"Incompatible weight {name}")
+                    weights[name] = tensor
         return cls(
             config, weights, device=device, dtype=dtype,
             fused_rms=fused_rms, packed_projections=packed_projections, unpacked_prefill=unpacked_prefill,

@@ -1,0 +1,102 @@
+"""Read local Hugging Face Safetensors checkpoints independently of model execution."""
+
+from dataclasses import dataclass
+import json
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class Checkpoint:
+    directory: Path
+    config: dict
+    weight_map: dict[str, str] | None
+    shards: tuple[str, ...]
+    total_tensor_bytes: int | None
+
+    @classmethod
+    def open(cls, directory, *, metadata_only=False):
+        """Resolve local config and shard index. Open individual tensors on demand."""
+        directory = Path(directory)
+        config = json.loads((directory / "config.json").read_text())
+        if not isinstance(config, dict) or not isinstance(config.get("model_type"), str) or not config["model_type"]:
+            raise ValueError("Checkpoint config requires a model_type")
+        text_config = config.get("text_config", config)
+        if not isinstance(text_config, dict):
+            raise ValueError("Checkpoint text_config must be an object")
+        if config["model_type"] == "deepseek_v41" and text_config.get("model_type") != "deepseek_v41_text":
+            raise ValueError("DeepSeek V4.1 Flash requires its nested deepseek_v41_text config")
+
+        weight_map = None
+        shards = ("model.safetensors",)
+        total_tensor_bytes = None
+        index_path = directory / "model.safetensors.index.json"
+        if not (directory / shards[0]).is_file() and index_path.exists():
+            index = json.loads(index_path.read_text())
+            weight_map = index.get("weight_map") if isinstance(index, dict) else None
+            if not isinstance(weight_map, dict) or not weight_map or not all(weight_map):
+                raise ValueError("Safetensors index requires a nonempty weight_map")
+            for shard in weight_map.values():
+                if not isinstance(shard, str) or "/" in shard or "\\" in shard or not shard.endswith(".safetensors"):
+                    raise ValueError(f"Invalid shard filename {shard!r}")
+            shards = tuple(sorted(set(weight_map.values())))
+            metadata = index.get("metadata", {})
+            if not isinstance(metadata, dict):
+                raise ValueError("Safetensors index metadata must be an object")
+            total_tensor_bytes = metadata.get("total_size")
+            if total_tensor_bytes is not None and (type(total_tensor_bytes) is not int or total_tensor_bytes < 0):
+                raise ValueError("Safetensors index total_size must be a nonnegative byte count")
+        checkpoint = cls(directory, config, weight_map, shards, total_tensor_bytes)
+        if not metadata_only:
+            missing = checkpoint.missing_shards
+            if missing:
+                raise FileNotFoundError(f"Missing {len(missing)} checkpoint shard(s), including {directory / missing[0]}")
+        return checkpoint
+
+    @property
+    def model_type(self):
+        return self.config["model_type"]
+
+    @property
+    def text_config(self):
+        return self.config.get("text_config", self.config)
+
+    @property
+    def missing_shards(self):
+        return tuple(shard for shard in self.shards if not (self.directory / shard).is_file())
+
+    def shard_for(self, tensor_name):
+        if self.weight_map is None:
+            return self.directory / self.shards[0]
+        try:
+            return self.directory / self.weight_map[tensor_name]
+        except KeyError as error:
+            raise ValueError(f"Tensor {tensor_name!r} is absent from the checkpoint index") from error
+
+    def group_tensors(self, names):
+        grouped = {}
+        for name in names:
+            grouped.setdefault(self.shard_for(name), []).append(name)
+        return grouped
+
+    def read_tensor(self, tensor_name, *, device="cpu"):
+        """Load one Torch tensor with its stored dtype, including packed weight bytes."""
+        try:
+            from safetensors import safe_open
+
+            with safe_open(self.shard_for(tensor_name), framework="pt", device=str(device)) as shard:
+                return shard.get_tensor(tensor_name)
+        except ImportError as error:
+            raise ValueError("Install PyTorch and safetensors to read checkpoint tensors") from error
+
+    def describe(self):
+        return {
+            "model_type": self.model_type,
+            "architectures": self.config.get("architectures", []),
+            "vocab_size": self.text_config.get("vocab_size"),
+            "max_position_embeddings": self.text_config.get("max_position_embeddings"),
+            "quantization_config": self.config.get("quantization_config"),
+            "shard_count": len(self.shards),
+            "indexed_tensor_count": len(self.weight_map) if self.weight_map is not None else None,
+            "indexed_tensor_bytes": self.total_tensor_bytes,
+            "missing_shards": self.missing_shards,
+        }

@@ -11,6 +11,7 @@ from time import perf_counter_ns
 
 import numpy as np
 
+from checkpoint import Checkpoint
 from engine import Qwen3Engine, tiny_weights
 
 
@@ -260,6 +261,10 @@ def parse_args(argv):
             command.add_argument("--warmup", type=int, default=3)
             command.add_argument("--repeats", type=int, default=20)
             command.add_argument("--source-tag", default="working-tree")
+    inspection = commands.add_parser("inspect-checkpoint", help="Read checkpoint config and Safetensors layout")
+    inspection.add_argument("--checkpoint", type=Path, required=True)
+    inspection.add_argument("--metadata-only", action="store_true", help="Inspect the index before downloading weight shards")
+    inspection.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")
     comparison.add_argument("--baseline", type=Path, required=True)
     comparison.add_argument("--candidate", type=Path, required=True)
@@ -274,6 +279,8 @@ def main(argv=None) -> int:
     try:
         if args.command == "compare":
             result = compare(args)
+        elif args.command == "inspect-checkpoint":
+            result = Checkpoint.open(args.checkpoint, metadata_only=args.metadata_only).describe()
         else:
             if args.seed < 0 or args.new_tokens < 2 or min(args.prompt_lengths) < 1:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")

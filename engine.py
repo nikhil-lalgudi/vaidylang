@@ -7,6 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
+from checkpoint import Checkpoint
+
 
 @dataclass(frozen=True)
 class Config:
@@ -35,7 +37,10 @@ class Config:
 
     @classmethod
     def from_file(cls, path: Path) -> "Config":
-        values = json.loads(path.read_text())
+        return cls.from_mapping(json.loads(path.read_text()))
+
+    @classmethod
+    def from_mapping(cls, values) -> "Config":
         if (
             values.get("model_type") != "qwen3"
             or values.get("hidden_act") != "silu"
@@ -138,8 +143,13 @@ class Qwen3Engine:
 
     @classmethod
     def from_checkpoint(cls, directory: Path) -> "Qwen3Engine":
-        config = Config.from_file(directory / "config.json")
-        return cls(config, read_weights(directory / "model.safetensors", weight_shapes(config)))
+        checkpoint = Checkpoint.open(directory)
+        config = Config.from_mapping(checkpoint.config)
+        shapes = weight_shapes(config)
+        weights = {}
+        for shard, names in checkpoint.group_tensors(shapes).items():
+            weights.update(read_weights(shard, {name: shapes[name] for name in names}))
+        return cls(config, weights)
 
     def prefill(self, token_ids, capacity: int) -> tuple[np.ndarray, State]:
         """Start a request and return logits for the first generated token."""

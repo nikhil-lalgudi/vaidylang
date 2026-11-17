@@ -28,7 +28,17 @@ python harness.py compare --baseline results/baseline.json \
   --min-tpot-improvement-pct 5 --max-ttft-regression-pct 5
 ```
 
-## Check the public checkpoint
+## Inspect a checkpoint
+
+The shared checkpoint reader accepts the published DeepSeek V4.1 Flash config and Safetensors index. Inspect its metadata before downloading the weight shards.
+
+```bash
+python harness.py inspect-checkpoint --checkpoint checkpoints/DeepSeek-V4.1-Flash --metadata-only
+```
+
+`Checkpoint.open(path).read_tensor(name)` reads an individual local tensor with its stored encoding. DeepSeek's FP8 scales require PyTorch and Safetensors versions that support E8M0. The inference commands use Vaidylang's Qwen3 forward pass. DeepSeek execution requires a model-specific forward pass.
+
+## Check the public Qwen3 checkpoint
 
 On a machine with access to Hugging Face, download the pinned Qwen3-0.6B revision. An FP32 CPU oracle and candidate in the same process need several GB of RAM.
 
