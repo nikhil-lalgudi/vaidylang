@@ -47,11 +47,36 @@ def sdpa(q, k, v, *, causal, mask=None):
 
 class CudaQwen3Engine:
     @torch.inference_mode()
-    def __init__(self, config: Config, weights: dict, *, dtype, device="cuda", fused_rms=False, packed_projections=False):
+    def __init__(
+        self, config: Config, weights: dict, *, dtype, device="cuda", fused_rms=False,
+        packed_projections=False, unpacked_prefill=False, dense_prefill=0, decode_splits=0,
+        fused_decode_pointwise=False, tiled_decode=False,
+    ):
+        if unpacked_prefill and not packed_projections:
+            raise ValueError("Unpacked prefill requires packed decode projections")
+        if dense_prefill < 0 or decode_splits < 0:
+            raise ValueError("Dense prefill threshold and decode split count must be nonnegative")
+        if (dense_prefill or decode_splits) and dtype != torch.bfloat16:
+            raise ValueError("FlashAttention tuning requires BF16")
+        if tiled_decode and (dtype != torch.bfloat16 or decode_splits):
+            raise ValueError("Tiled decode attention requires BF16 and does not use FlashAttention splits")
+        if tiled_decode and (config.head_dim > 256 or config.head_dim & (config.head_dim - 1)):
+            raise ValueError("Tiled decode attention requires a power-of-two head dimension up to 256")
+        if fused_decode_pointwise and not fused_rms:
+            raise ValueError("Fused decode pointwise operations require fused RMSNorm")
         self.config = config
         self.device = torch.device(device)
         self.dtype = dtype
         self.packed_projections = packed_projections
+        self.unpacked_prefill = unpacked_prefill
+        self.dense_prefill = dense_prefill
+        self.decode_splits = decode_splits
+        self.fused_decode_pointwise = fused_decode_pointwise
+        self.decode_attention = None
+        if tiled_decode:
+            from cuda_attention import tiled_decode_attention
+
+            self.decode_attention = tiled_decode_attention
         self.qkv_widths = (
             config.num_attention_heads * config.head_dim,
             config.num_key_value_heads * config.head_dim,
@@ -64,6 +89,12 @@ class CudaQwen3Engine:
             from cuda_kernels import fused_rms_norm
 
             self.norm = fused_rms_norm
+        if fused_decode_pointwise:
+            from cuda_kernels import fused_qk_rms_norm, fused_residual_rms_norm, fused_swiglu
+
+            self.norm_qk = fused_qk_rms_norm
+            self.norm_residual = fused_residual_rms_norm
+            self.swiglu = fused_swiglu
         self.flash_attention = None
         if dtype == torch.bfloat16:
             from sgl_kernel.flash_attn import flash_attn_with_kvcache
@@ -90,6 +121,16 @@ class CudaQwen3Engine:
                 layer["mlp.gate_up_proj.weight"] = torch.cat([
                     layer.pop(f"mlp.{name}_proj.weight") for name in ("gate", "up")
                 ])
+                if unpacked_prefill:
+                    q, k, v = layer["self_attn.qkv_proj.weight"].split(self.qkv_widths)
+                    gate, up = layer["mlp.gate_up_proj.weight"].chunk(2)
+                    layer.update({
+                        "self_attn.q_proj.weight": q,
+                        "self_attn.k_proj.weight": k,
+                        "self_attn.v_proj.weight": v,
+                        "mlp.gate_proj.weight": gate,
+                        "mlp.up_proj.weight": up,
+                    })
             self.layers.append(layer)
 
         self.positions = torch.arange(config.max_position_embeddings, device=device)
@@ -99,9 +140,18 @@ class CudaQwen3Engine:
         angles = self.positions[:, None].float() * frequency
         self.cos = angles.cos().to(dtype)
         self.sin = angles.sin().to(dtype)
+        if dense_prefill:
+            from sgl_kernel import rotary_embedding
+
+            self.prefill_rotary = rotary_embedding
+            self.cos_sin = torch.cat((self.cos, self.sin), dim=-1)
 
     @classmethod
-    def from_checkpoint(cls, path: Path, *, dtype, device="cuda", fused_rms=False, packed_projections=False):
+    def from_checkpoint(
+        cls, path: Path, *, dtype, device="cuda", fused_rms=False,
+        packed_projections=False, unpacked_prefill=False, dense_prefill=0, decode_splits=0,
+        fused_decode_pointwise=False, tiled_decode=False,
+    ):
         config = Config.from_file(path / "config.json")
         weights = {}
         with safe_open(path / "model.safetensors", framework="pt", device=str(device)) as source:
@@ -112,7 +162,10 @@ class CudaQwen3Engine:
                 weights[name] = tensor
         return cls(
             config, weights, device=device, dtype=dtype,
-            fused_rms=fused_rms, packed_projections=packed_projections,
+            fused_rms=fused_rms, packed_projections=packed_projections, unpacked_prefill=unpacked_prefill,
+            dense_prefill=dense_prefill, decode_splits=decode_splits,
+            fused_decode_pointwise=fused_decode_pointwise,
+            tiled_decode=tiled_decode,
         )
 
     @torch.inference_mode()
@@ -163,6 +216,9 @@ class CudaQwen3Engine:
     def _forward(self, ids, state, *, prefill):
         c = self.config
         steps = ids.numel()
+        packed = self.packed_projections and not (prefill and self.unpacked_prefill)
+        dense = prefill and self.dense_prefill and steps >= self.dense_prefill
+        fused = not prefill and self.fused_decode_pointwise
         if self.flash_attention is None:
             positions = state.position + self.positions[:steps]
             cos = self.cos.index_select(0, positions).unsqueeze(1)
@@ -171,8 +227,11 @@ class CudaQwen3Engine:
 
         hidden = self.embeddings.index_select(0, ids)
         for index, w in enumerate(self.layers):
-            x = self.norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
-            if self.packed_projections:
+            if fused and index:
+                hidden, x = self.norm_residual(hidden, update, w["input_layernorm.weight"], c.rms_norm_eps)
+            else:
+                x = self.norm(hidden, w["input_layernorm.weight"], c.rms_norm_eps)
+            if packed:
                 q, k, v = F.linear(x, w["self_attn.qkv_proj.weight"]).split(self.qkv_widths, dim=-1)
                 q, k, v = q.contiguous(), k.contiguous(), v.contiguous()
             else:
@@ -182,16 +241,28 @@ class CudaQwen3Engine:
             q = q.view(steps, c.num_attention_heads, c.head_dim)
             k = k.view(steps, c.num_key_value_heads, c.head_dim)
             v = v.view_as(k)
-            q = self.norm(q, w["self_attn.q_norm.weight"], c.rms_norm_eps)
-            k = self.norm(k, w["self_attn.k_norm.weight"], c.rms_norm_eps)
+            q_weight, k_weight = w["self_attn.q_norm.weight"], w["self_attn.k_norm.weight"]
+            if fused:
+                q, k = self.norm_qk(q, k, q_weight, k_weight, c.rms_norm_eps)
+            else:
+                q = self.norm(q, q_weight, c.rms_norm_eps)
+                k = self.norm(k, k_weight, c.rms_norm_eps)
 
             keys, values = state.keys[index], state.values[index]
-            if self.flash_attention is not None:
+            if dense:
+                self.prefill_rotary(self.positions[:steps], q, k, c.head_dim, self.cos_sin)
+                keys[:, :steps].copy_(k.unsqueeze(0))
+                values[:, :steps].copy_(v.unsqueeze(0))
+                joined = self.flash_attention(q.unsqueeze(0), k.unsqueeze(0), v.unsqueeze(0), causal=True)
+            elif not prefill and self.decode_attention is not None:
+                joined = self.decode_attention(q, keys, values, k, v, state.position, self.cos, self.sin)
+            elif self.flash_attention is not None:
                 # The kernel appends K/V and applies Qwen's split-half RoPE from the device position.
                 joined = self.flash_attention(
                     q.unsqueeze(0), keys, values, k=k.unsqueeze(0), v=v.unsqueeze(0),
                     cache_seqlens=state.position, rotary_cos=self.cos, rotary_sin=self.sin,
                     rotary_interleaved=False, causal=prefill,
+                    num_splits=0 if prefill else self.decode_splits,
                 )
             else:
                 q, k = rotate(q, cos, sin), rotate(k, cos, sin)
@@ -202,17 +273,29 @@ class CudaQwen3Engine:
                     causal=prefill, mask=mask,
                 )
 
-            hidden = hidden + F.linear(joined.reshape(steps, -1), w["self_attn.o_proj.weight"])
-            x = self.norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
-            if self.packed_projections:
+            update = F.linear(joined.reshape(steps, -1), w["self_attn.o_proj.weight"])
+            if fused:
+                hidden, x = self.norm_residual(hidden, update, w["post_attention_layernorm.weight"], c.rms_norm_eps)
+            else:
+                hidden = hidden + update
+                x = self.norm(hidden, w["post_attention_layernorm.weight"], c.rms_norm_eps)
+            if packed:
                 gate, up = F.linear(x, w["mlp.gate_up_proj.weight"]).chunk(2, dim=-1)
             else:
                 gate = F.linear(x, w["mlp.gate_proj.weight"])
                 up = F.linear(x, w["mlp.up_proj.weight"])
-            hidden = hidden + F.linear(F.silu(gate) * up, w["mlp.down_proj.weight"])
+            activation = self.swiglu(gate, up) if fused else F.silu(gate) * up
+            update = F.linear(activation, w["mlp.down_proj.weight"])
+            if not fused:
+                hidden = hidden + update
 
         state.position.add_(steps)
-        return F.linear(self.norm(hidden[-1], self.final_norm, c.rms_norm_eps), self.lm_head)
+        if fused:
+            _, normalized = self.norm_residual(hidden, update, self.final_norm, c.rms_norm_eps)
+            normalized = normalized[0]
+        else:
+            normalized = self.norm(hidden[-1], self.final_norm, c.rms_norm_eps)
+        return F.linear(normalized, self.lm_head)
 
 
 class DecodeGraph:

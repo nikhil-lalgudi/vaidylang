@@ -104,6 +104,10 @@ def verify(args, engine) -> dict:
         "device": "cuda" if args.cuda else "cpu", "dtype": args.dtype,
         "atol": args.atol, "rtol": args.rtol, "cuda_graph": args.cuda_graph,
         "fused_rms": args.fused_rms, "packed_projections": args.packed_projections,
+        "unpacked_prefill": args.unpacked_prefill,
+        "dense_prefill": args.dense_prefill, "decode_splits": args.decode_splits,
+        "fused_decode_pointwise": args.fused_decode_pointwise,
+        "tiled_decode": args.tiled_decode,
     }
 
 
@@ -242,6 +246,14 @@ def parse_args(argv):
             command.add_argument("--cuda-graph", action="store_true", help="Verify CUDA Graph replay")
             command.add_argument("--fused-rms", action="store_true", help="Verify fused BF16 RMSNorm")
             command.add_argument("--packed-projections", action="store_true", help="Verify packed linear projections")
+            command.add_argument("--unpacked-prefill", action="store_true", help="Use packed projections only for decode")
+            command.add_argument(
+                "--dense-prefill", type=int, nargs="?", const=1, default=0, metavar="MIN_TOKENS",
+                help="Verify dense prefill attention at or above this length",
+            )
+            command.add_argument("--decode-splits", type=int, default=0, help="FlashAttention KV splits for decode (0 for automatic)")
+            command.add_argument("--fused-decode-pointwise", action="store_true", help="Verify fused decode normalizations and activation")
+            command.add_argument("--tiled-decode-attention", dest="tiled_decode", action="store_true", help="Verify tiled Triton attention")
             command.add_argument("--atol", type=float, default=3e-4)
             command.add_argument("--rtol", type=float, default=3e-4)
         else:
@@ -280,13 +292,21 @@ def main(argv=None) -> int:
                 options = {
                     "dtype": dtype, "fused_rms": args.fused_rms,
                     "packed_projections": args.packed_projections,
+                    "unpacked_prefill": args.unpacked_prefill,
+                    "dense_prefill": args.dense_prefill, "decode_splits": args.decode_splits,
+                    "fused_decode_pointwise": args.fused_decode_pointwise,
+                    "tiled_decode": args.tiled_decode,
                 }
                 engine = (
                     engine_type(*tiny_weights(), **options) if args.tiny
                     else engine_type.from_checkpoint(args.checkpoint, **options)
                 )
             else:
-                if args.command == "verify" and (args.dtype != "float32" or args.cuda_graph or args.fused_rms or args.packed_projections):
+                if args.command == "verify" and (
+                    args.dtype != "float32" or args.cuda_graph or args.fused_rms
+                    or args.packed_projections or args.unpacked_prefill or args.dense_prefill or args.decode_splits
+                    or args.fused_decode_pointwise or args.tiled_decode
+                ):
                     raise ValueError("CUDA verification options require --cuda")
                 engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:
