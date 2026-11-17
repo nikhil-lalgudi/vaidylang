@@ -1,0 +1,506 @@
+{
+  "device": "NVIDIA H100 NVL",
+  "pinned_qwen3_trials": [
+    {
+      "report": "ngram-flash.json",
+      "parity": {
+        "matched": 36,
+        "compared": 54,
+        "passed": false
+      },
+      "modes": [
+        {
+          "block_size": 0,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.4641090000000005,
+            "p95": 8.14796855
+          },
+          "streaming_gap_p95_ms": 1.2797125,
+          "decode_tokens_per_second": 803.3685740528947,
+          "output_tokens_per_second": 772.6935463948502,
+          "draft_ms": 0.0,
+          "verify_ms": 0.0,
+          "scalar_ms": 2845.518326,
+          "emitted_tokens_per_cycle": 1.0,
+          "block_cycles": 0,
+          "cycles": 2286,
+          "proposed": 0,
+          "accepted": 0,
+          "draft_acceptance": null,
+          "exact_matches": null,
+          "decode_speedup": 1.0,
+          "block_draft_ms_p50": null,
+          "block_verify_ms_p50": null,
+          "block_cycle_ms_p50": null,
+          "emitted_per_verification_cycle": null,
+          "by_category_decode_tokens_per_second": {
+            "chat": 789.6029853807058,
+            "coding": 817.6226450599022
+          }
+        },
+        {
+          "block_size": 2,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.299421000000001,
+            "p95": 7.732860499999999
+          },
+          "streaming_gap_p95_ms": 2.238619,
+          "decode_tokens_per_second": 709.2507167651754,
+          "output_tokens_per_second": 686.7576027545869,
+          "draft_ms": 9.722691,
+          "verify_ms": 2287.014638,
+          "scalar_ms": 921.906069,
+          "emitted_tokens_per_cycle": 1.2981260647359454,
+          "block_cycles": 1038,
+          "cycles": 1761,
+          "proposed": 1038,
+          "accepted": 525,
+          "draft_acceptance": 0.5057803468208093,
+          "exact_matches": 12,
+          "decode_speedup": 0.8828459808766151,
+          "block_draft_ms_p50": 0.00492,
+          "block_verify_ms_p50": 2.2133385,
+          "block_cycle_ms_p50": 2.2185889999999997,
+          "emitted_per_verification_cycle": 1.5057803468208093,
+          "by_category_decode_tokens_per_second": {
+            "chat": 732.7840113837323,
+            "coding": 687.1819290439447
+          }
+        },
+        {
+          "block_size": 4,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.348547,
+            "p95": 7.7952261
+          },
+          "streaming_gap_p95_ms": 2.26017975,
+          "decode_tokens_per_second": 839.217097189449,
+          "output_tokens_per_second": 806.5124830055848,
+          "draft_ms": 8.956528,
+          "verify_ms": 1761.050135,
+          "scalar_ms": 950.000855,
+          "emitted_tokens_per_cycle": 1.48828125,
+          "block_cycles": 792,
+          "cycles": 1536,
+          "proposed": 2367,
+          "accepted": 750,
+          "draft_acceptance": 0.31685678073510776,
+          "exact_matches": 12,
+          "decode_speedup": 1.0446227600809712,
+          "block_draft_ms_p50": 0.00479,
+          "block_verify_ms_p50": 2.235649,
+          "block_cycle_ms_p50": 2.241474,
+          "emitted_per_verification_cycle": 1.946969696969697,
+          "by_category_decode_tokens_per_second": {
+            "chat": 900.5703822790559,
+            "coding": 785.6902659422421
+          }
+        },
+        {
+          "block_size": 8,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.324022,
+            "p95": 9.097687099999995
+          },
+          "streaming_gap_p95_ms": 2.28974175,
+          "decode_tokens_per_second": 890.4732710089507,
+          "output_tokens_per_second": 851.2013293636761,
+          "draft_ms": 8.487079,
+          "verify_ms": 1551.983463,
+          "scalar_ms": 1002.944162,
+          "emitted_tokens_per_cycle": 1.5519348268839104,
+          "block_cycles": 687,
+          "cycles": 1473,
+          "proposed": 4659,
+          "accepted": 813,
+          "draft_acceptance": 0.17450096587250483,
+          "exact_matches": 12,
+          "decode_speedup": 1.1084243269768739,
+          "block_draft_ms_p50": 0.00474,
+          "block_verify_ms_p50": 2.267815,
+          "block_cycle_ms_p50": 2.273864,
+          "emitted_per_verification_cycle": 2.183406113537118,
+          "by_category_decode_tokens_per_second": {
+            "chat": 978.5868711578185,
+            "coding": 816.9167217661986
+          }
+        }
+      ]
+    },
+    {
+      "report": "ngram-tiled.json",
+      "parity": {
+        "matched": 54,
+        "compared": 54,
+        "passed": true
+      },
+      "modes": [
+        {
+          "block_size": 0,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.306057,
+            "p95": 7.6027843
+          },
+          "streaming_gap_p95_ms": 1.280209,
+          "decode_tokens_per_second": 805.5438046158083,
+          "output_tokens_per_second": 775.7229100850108,
+          "draft_ms": 0.0,
+          "verify_ms": 0.0,
+          "scalar_ms": 2837.8345,
+          "emitted_tokens_per_cycle": 1.0,
+          "block_cycles": 0,
+          "cycles": 2286,
+          "proposed": 0,
+          "accepted": 0,
+          "draft_acceptance": null,
+          "exact_matches": null,
+          "decode_speedup": 1.0,
+          "block_draft_ms_p50": null,
+          "block_verify_ms_p50": null,
+          "block_cycle_ms_p50": null,
+          "emitted_per_verification_cycle": null,
+          "by_category_decode_tokens_per_second": {
+            "chat": 793.3673143173934,
+            "coding": 818.0998869714484
+          }
+        },
+        {
+          "block_size": 2,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.1237335,
+            "p95": 7.872256299999999
+          },
+          "streaming_gap_p95_ms": 1.3784335,
+          "decode_tokens_per_second": 964.1410653350086,
+          "output_tokens_per_second": 921.4430682938845,
+          "draft_ms": 9.305833,
+          "verify_ms": 1424.466559,
+          "scalar_ms": 933.340735,
+          "emitted_tokens_per_cycle": 1.284991568296796,
+          "block_cycles": 1044,
+          "cycles": 1779,
+          "proposed": 1044,
+          "accepted": 507,
+          "draft_acceptance": 0.48563218390804597,
+          "exact_matches": 18,
+          "decode_speedup": 1.196882230128802,
+          "block_draft_ms_p50": 0.004550500000000001,
+          "block_verify_ms_p50": 1.357761,
+          "block_cycle_ms_p50": 1.3625505,
+          "emitted_per_verification_cycle": 1.485632183908046,
+          "by_category_decode_tokens_per_second": {
+            "chat": 1000.3642034620113,
+            "coding": 930.449533920001
+          }
+        },
+        {
+          "block_size": 4,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.1699245000000005,
+            "p95": 7.782426499999998
+          },
+          "streaming_gap_p95_ms": 1.41013425,
+          "decode_tokens_per_second": 1087.0141968790183,
+          "output_tokens_per_second": 1031.1941590488173,
+          "draft_ms": 9.81902,
+          "verify_ms": 1113.450585,
+          "scalar_ms": 975.976235,
+          "emitted_tokens_per_cycle": 1.4569789674952198,
+          "block_cycles": 801,
+          "cycles": 1569,
+          "proposed": 2394,
+          "accepted": 717,
+          "draft_acceptance": 0.29949874686716793,
+          "exact_matches": 18,
+          "decode_speedup": 1.3494166185009058,
+          "block_draft_ms_p50": 0.00447,
+          "block_verify_ms_p50": 1.389161,
+          "block_cycle_ms_p50": 1.394341,
+          "emitted_per_verification_cycle": 1.895131086142322,
+          "by_category_decode_tokens_per_second": {
+            "chat": 1150.8919283560972,
+            "coding": 1029.8543885005756
+          }
+        },
+        {
+          "block_size": 8,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.1744045,
+            "p95": 7.44335115
+          },
+          "streaming_gap_p95_ms": 1.4544045,
+          "decode_tokens_per_second": 1121.0609713186113,
+          "output_tokens_per_second": 1062.260690624325,
+          "draft_ms": 8.115485,
+          "verify_ms": 1001.945169,
+          "scalar_ms": 1025.5825770000001,
+          "emitted_tokens_per_cycle": 1.5179282868525896,
+          "block_cycles": 699,
+          "cycles": 1506,
+          "proposed": 4743,
+          "accepted": 780,
+          "draft_acceptance": 0.1644528779253637,
+          "exact_matches": 18,
+          "decode_speedup": 1.391682196417964,
+          "block_draft_ms_p50": 0.00441,
+          "block_verify_ms_p50": 1.432602,
+          "block_cycle_ms_p50": 1.437942,
+          "emitted_per_verification_cycle": 2.11587982832618,
+          "by_category_decode_tokens_per_second": {
+            "chat": 1204.0034536886471,
+            "coding": 1048.8096224126157
+          }
+        }
+      ]
+    },
+    {
+      "report": "learned-tiled.json",
+      "parity": {
+        "matched": 54,
+        "compared": 54,
+        "passed": true
+      },
+      "modes": [
+        {
+          "block_size": 0,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.377912,
+            "p95": 7.75722345
+          },
+          "streaming_gap_p95_ms": 1.28041675,
+          "decode_tokens_per_second": 804.7731224855071,
+          "output_tokens_per_second": 774.5909736810961,
+          "draft_ms": 0.0,
+          "verify_ms": 0.0,
+          "scalar_ms": 2840.552121,
+          "emitted_tokens_per_cycle": 1.0,
+          "block_cycles": 0,
+          "cycles": 2286,
+          "proposed": 0,
+          "accepted": 0,
+          "draft_acceptance": null,
+          "exact_matches": null,
+          "decode_speedup": 1.0,
+          "block_draft_ms_p50": null,
+          "block_verify_ms_p50": null,
+          "block_cycle_ms_p50": null,
+          "emitted_per_verification_cycle": null,
+          "by_category_decode_tokens_per_second": {
+            "chat": 792.2106779876007,
+            "coding": 817.7404034339664
+          }
+        },
+        {
+          "block_size": 2,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.3936720000000005,
+            "p95": 7.56530015
+          },
+          "streaming_gap_p95_ms": 1.42030375,
+          "decode_tokens_per_second": 781.3219245111501,
+          "output_tokens_per_second": 753.1374647682686,
+          "draft_ms": 53.313384,
+          "verify_ms": 803.902234,
+          "scalar_ms": 2063.539192,
+          "emitted_tokens_per_cycle": 1.03956343792633,
+          "block_cycles": 582,
+          "cycles": 2199,
+          "proposed": 582,
+          "accepted": 87,
+          "draft_acceptance": 0.14948453608247422,
+          "exact_matches": 18,
+          "decode_speedup": 0.9708598643280618,
+          "block_draft_ms_p50": 0.028755000000000003,
+          "block_verify_ms_p50": 1.378736,
+          "block_cycle_ms_p50": 1.4060570000000001,
+          "emitted_per_verification_cycle": 1.1494845360824741,
+          "by_category_decode_tokens_per_second": {
+            "chat": 774.8614468077621,
+            "coding": 787.8910376115097
+          }
+        },
+        {
+          "block_size": 4,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.371437,
+            "p95": 7.678039449999999
+          },
+          "streaming_gap_p95_ms": 1.465277,
+          "decode_tokens_per_second": 779.5273178361434,
+          "output_tokens_per_second": 751.3547077020467,
+          "draft_ms": 60.271461,
+          "verify_ms": 795.099877,
+          "scalar_ms": 2072.229745,
+          "emitted_tokens_per_cycle": 1.045267489711934,
+          "block_cycles": 564,
+          "cycles": 2187,
+          "proposed": 888,
+          "accepted": 99,
+          "draft_acceptance": 0.11148648648648649,
+          "exact_matches": 18,
+          "decode_speedup": 0.9686299107860448,
+          "block_draft_ms_p50": 0.04139,
+          "block_verify_ms_p50": 1.407541,
+          "block_cycle_ms_p50": 1.450142,
+          "emitted_per_verification_cycle": 1.175531914893617,
+          "by_category_decode_tokens_per_second": {
+            "chat": 772.008556186363,
+            "coding": 787.1939736164935
+          }
+        },
+        {
+          "block_size": 8,
+          "requests": 18,
+          "ttft_ms": {
+            "p50": 7.439007999999999,
+            "p95": 7.7246865
+          },
+          "streaming_gap_p95_ms": 1.511643,
+          "decode_tokens_per_second": 774.7553980368099,
+          "output_tokens_per_second": 746.8780049612571,
+          "draft_ms": 59.867083,
+          "verify_ms": 791.873398,
+          "scalar_ms": 2093.96319,
+          "emitted_tokens_per_cycle": 1.0438356164383562,
+          "block_cycles": 546,
+          "cycles": 2190,
+          "proposed": 948,
+          "accepted": 96,
+          "draft_acceptance": 0.10126582278481013,
+          "exact_matches": 18,
+          "decode_speedup": 0.9627003889543567,
+          "block_draft_ms_p50": 0.0418705,
+          "block_verify_ms_p50": 1.448847,
+          "block_cycle_ms_p50": 1.4928175000000001,
+          "emitted_per_verification_cycle": 1.1758241758241759,
+          "by_category_decode_tokens_per_second": {
+            "chat": 767.4376276364848,
+            "coding": 782.2140666471269
+          }
+        }
+      ]
+    }
+  ],
+  "identical_prefix_replays": [
+    {
+      "report": "parity-flash.json",
+      "block_verification_rows": 84,
+      "matching_scalar_choices": 80,
+      "matching_scalar_logit_vectors": 0,
+      "all_scalar_output_hashes_reproduced": true,
+      "all_scalar_replays_unchanged": true,
+      "scalar_bf16_tolerance_failures": [
+        {
+          "prompt_tokens": 1024,
+          "step": 91,
+          "hf_bf16_logit_failures": 7,
+          "hf_fp32_logit_failures": 495
+        },
+        {
+          "prompt_tokens": 1024,
+          "step": 100,
+          "hf_bf16_logit_failures": 13,
+          "hf_fp32_logit_failures": 0
+        },
+        {
+          "prompt_tokens": 4096,
+          "step": 15,
+          "hf_bf16_logit_failures": 3,
+          "hf_fp32_logit_failures": 0
+        },
+        {
+          "prompt_tokens": 4096,
+          "step": 21,
+          "hf_bf16_logit_failures": 1852,
+          "hf_fp32_logit_failures": 43
+        }
+      ]
+    },
+    {
+      "report": "parity-tiled.json",
+      "block_verification_rows": 84,
+      "matching_scalar_choices": 84,
+      "matching_scalar_logit_vectors": 84,
+      "all_scalar_output_hashes_reproduced": true,
+      "all_scalar_replays_unchanged": true,
+      "scalar_bf16_tolerance_failures": [
+        {
+          "prompt_tokens": 1024,
+          "step": 91,
+          "hf_bf16_logit_failures": 7,
+          "hf_fp32_logit_failures": 495
+        },
+        {
+          "prompt_tokens": 1024,
+          "step": 100,
+          "hf_bf16_logit_failures": 13,
+          "hf_fp32_logit_failures": 0
+        },
+        {
+          "prompt_tokens": 4096,
+          "step": 15,
+          "hf_bf16_logit_failures": 3,
+          "hf_fp32_logit_failures": 0
+        },
+        {
+          "prompt_tokens": 4096,
+          "step": 21,
+          "hf_bf16_logit_failures": 1852,
+          "hf_fp32_logit_failures": 43
+        }
+      ]
+    }
+  ],
+  "frozen_target_only_replay": [
+    {
+      "prompt_tokens": 128,
+      "matching_previous_cuda_hashes": true,
+      "p50_tpot_ms": 1.264088590551181,
+      "p95_ttft_ms": 7.730769
+    },
+    {
+      "prompt_tokens": 1024,
+      "matching_previous_cuda_hashes": true,
+      "p50_tpot_ms": 1.3225648385826771,
+      "p95_ttft_ms": 7.7145467
+    },
+    {
+      "prompt_tokens": 4096,
+      "matching_previous_cuda_hashes": true,
+      "p50_tpot_ms": 1.543077248031496,
+      "p95_ttft_ms": 18.1810445
+    }
+  ],
+  "projection_profile_report": "verification-trace-summary.json",
+  "projection_backend_trial": {
+    "setting": "TORCH_BLAS_PREFER_CUBLASLT=1",
+    "status": "CUDA illegal address during CUDA graph replay",
+    "log": "cublaslt.log"
+  },
+  "baseten_head_to_head": {
+    "status": "blocked",
+    "upstream_commit": "76766a97308bfd1658fb055e835d0f92de737dc3",
+    "source": "https://github.com/basetenlabs/deepseek-ultrafast/tree/76766a97308bfd1658fb055e835d0f92de737dc3",
+    "published_configurations": [
+      "4x GB300 TP4",
+      "8x B300 TP8"
+    ],
+    "published_model": "DeepSeek-V4.1-Flash",
+    "checkpoint_revision_checked": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+    "blockers": [
+      "No matching configured Blackwell host was available. The available host is one H100 NVL.",
+      "The Vaidylang loader rejects the DeepSeek checkpoint model_type deepseek_v41."
+    ]
+  }
+}
