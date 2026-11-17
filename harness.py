@@ -150,7 +150,7 @@ def benchmark(args, engine) -> dict:
             "device": "cpu",
             "dtype": "float32",
             "machine": platform.machine(),
-            "host": platform.node(),
+            "host": hashlib.sha256(platform.node().encode()).hexdigest(),
             "python": platform.python_version(),
             "numpy": np.__version__,
             "thread_env": {name: os.getenv(name) for name in (

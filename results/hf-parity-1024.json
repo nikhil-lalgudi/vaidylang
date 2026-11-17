@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "oracle": "hf",
+  "steps_per_path": 2,
+  "cases": [
+    {
+      "prompt_tokens": 1024,
+      "teacher_forced_max_abs": 2.3365020751953125e-05,
+      "greedy_max_abs": 2.7418136596679688e-05
+    }
+  ]
+}

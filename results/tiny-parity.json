@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "oracle": "full",
+  "steps_per_path": 8,
+  "cases": [
+    {
+      "prompt_tokens": 8,
+      "teacher_forced_max_abs": 9.5367431640625e-07,
+      "greedy_max_abs": 7.748603820800781e-07
+    },
+    {
+      "prompt_tokens": 32,
+      "teacher_forced_max_abs": 1.430511474609375e-06,
+      "greedy_max_abs": 1.3113021850585938e-06
+    }
+  ]
+}

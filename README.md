@@ -42,7 +42,7 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python harness.py verify \
   --prompt-lengths 16 64 --new-tokens 4
 ```
 
-The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` puts the oracle on a CUDA GPU. The starter engine itself runs on CPU. The checkpoint and GPU commands are provided for the next run.
+The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` puts the oracle on a CUDA GPU. The starter engine itself runs on CPU. The local FP32 run passed on both forced and greedy paths at prompt lengths 16 and 64 with four output tokens, 128 with 32 output tokens, and 1,024 with two output tokens. See `results/hf-parity.json`, `results/hf-parity-extended.json`, and `results/hf-parity-1024.json`.
 
 ## Build the GPU engine in this order
 
