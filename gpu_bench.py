@@ -1,6 +1,7 @@
-"""Benchmark batch-1 BF16 streaming with the fixed Qwen3 token fixtures."""
+"""Measure batch-1 BF16 prefill and decode on fixed Qwen3 token fixtures."""
 
 import argparse
+from contextlib import nullcontext
 from importlib.metadata import version
 import json
 from pathlib import Path
@@ -20,29 +21,62 @@ NEW_TOKENS = 128
 SGLANG_VERSION = "0.5.23"
 
 
-def stream_sample(start_stream, prompt_tokens, new_tokens):
+def completed_sample(start, new_tokens):
     times = []
     output = []
     started = perf_counter_ns()
-    for chunk in start_stream():
-        arrived = perf_counter_ns()
-        meta = chunk["meta_info"]
-        if meta["prompt_tokens"] != prompt_tokens:
-            raise ValueError("SGLang changed the prompt length")
-        if meta["cached_tokens"] != 0:
-            raise ValueError("Unexpected prefix cache hit")
-        ids = chunk.get("output_ids", [])
-        count = meta["completion_tokens"]
-        if count == len(output) and not ids:
-            continue
-        if len(ids) != 1 or count != len(output) + 1:
-            raise ValueError("Expected one token per stream update to measure raw token gaps")
-        output.append(ids[0])
-        times.append(arrived)
+    for token in start():
+        output.append(token.item())
+        times.append(perf_counter_ns())
     if len(output) != new_tokens:
-        raise ValueError(f"Stream yielded {len(output)} tokens, expected {new_tokens} tokens")
+        raise ValueError(f"Run yielded {len(output)} tokens, expected {new_tokens} tokens")
     return request_sample(started, times, output)
 
+
+def benchmark_cases(args, prompts, generate):
+    cases = []
+    for ids in prompts:
+        def start():
+            return generate(ids)
+
+        for _ in range(args.warmup):
+            completed_sample(start, NEW_TOKENS)
+        samples = [completed_sample(start, NEW_TOKENS) for _ in range(args.repeats)]
+        cases.append(summarize_case(ids, NEW_TOKENS, samples))
+    return cases
+
+
+def sglang_runner(checkpoint, settings):
+    # Reuse the pinned static ModelRunner used by the official one-batch tool.
+    # https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/benchmark/one_batch.py
+    from sglang.benchmark import one_batch
+
+    server_args = one_batch.ServerArgs(model_path=str(checkpoint.resolve()), **settings)
+    server_args.resolve_once()
+    one_batch._set_envs_and_config(server_args)
+    port_args = one_batch.PortArgs.init_new(server_args)
+    one_batch.publish(
+        server_args, role="scheduler",
+        ranks=one_batch.SpawnRanks(world_rank=0, gpu_id=0),
+    )
+    one_batch._init_process_global_configs()
+    runner, _ = one_batch.load_model(server_args, port_args, gpu_id=0, tp_rank=0)
+    return runner, one_batch.prepare_synthetic_inputs_for_latency_test
+
+
+def sglang_tokens(runner, prepare_inputs, ids, annotate):
+    with annotate("prefill"):
+        runner.clear()
+        requests = prepare_inputs(1, len(ids), custom_inputs=[ids])
+        token, _, state = runner.extend(requests)
+        yield token
+    try:
+        for _ in range(NEW_TOKENS - 1):
+            with annotate("decode"):
+                token, _ = runner.decode(token, state)
+                yield token
+    finally:
+        runner.cleanup(state)
 
 def benchmark_sglang(args):
     import torch
@@ -57,8 +91,6 @@ def benchmark_sglang(args):
     if checkpoint_identity(args.checkpoint) != PINNED_CHECKPOINT:
         raise ValueError("Checkpoint configuration or weights differ from the pinned revision")
 
-    import sglang
-
     gpu = torch.cuda.get_device_properties(0)
     driver = subprocess.check_output(
         ["nvidia-smi", "--id", f"GPU-{gpu.uuid}", "--query-gpu=driver_version", "--format=csv,noheader"],
@@ -67,9 +99,6 @@ def benchmark_sglang(args):
     prompts = json.loads(FIXTURES.read_text())
     if tuple(map(len, prompts)) != PROMPT_LENGTHS:
         raise ValueError("Expected fixed input fixtures of 128, 1024, and 4096 tokens")
-    sampling = {"temperature": 0, "max_new_tokens": NEW_TOKENS, "ignore_eos": True}
-    # Engine accepts the ServerArgs fields in the pinned release.
-    # https://github.com/sgl-project/sglang/tree/v0.5.23/python/sglang/srt/arg_groups/fields
     settings = {
         "device": "cuda",
         "dtype": "bfloat16",
@@ -79,26 +108,18 @@ def benchmark_sglang(args):
         "disable_radix_cache": True,
         "chunked_prefill_size": -1,
         "speculative_algorithm": None,
-        "skip_tokenizer_init": True,
-        "stream_interval": 1,
-        "incremental_streaming_output": True,
+        "cuda_graph_max_bs_decode": 1,
+        "log_level": "warning",
     }
-    engine = sglang.Engine(model_path=str(args.checkpoint.resolve()), **settings)
+    runner, prepare_inputs = sglang_runner(args.checkpoint, settings)
+    annotate = torch.cuda.nvtx.range if args.profile else lambda _: nullcontext()
     try:
-        cases = []
-        for ids in prompts:
-            def start_stream():
-                return engine.generate(input_ids=ids, sampling_params=sampling, stream=True)
-
-            for _ in range(args.warmup):
-                stream_sample(start_stream, len(ids), NEW_TOKENS)
-            samples = [
-                stream_sample(start_stream, len(ids), NEW_TOKENS)
-                for _ in range(args.repeats)
-            ]
-            cases.append(summarize_case(ids, NEW_TOKENS, samples))
+        cases = benchmark_cases(
+            args, prompts, lambda ids: sglang_tokens(runner, prepare_inputs, ids, annotate),
+        )
     finally:
-        engine.shutdown()
+        if torch.distributed.is_initialized():
+            torch.distributed.destroy_process_group()
 
     return {
         "schema_version": 1,
@@ -121,7 +142,7 @@ def benchmark_sglang(args):
             "batch_size": 1,
             "temperature": 0,
             "ignore_eos": True,
-            "timing": "stream_wall_time",
+            "timing": "token_ready_wall_time",
             "new_tokens": NEW_TOKENS,
             "repeats": args.repeats,
             "warmup": args.warmup,
@@ -136,6 +157,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--repeats", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=3)
+    parser.add_argument("--profile", action="store_true", help="Label prefill and decode in an Nsight trace")
     args = parser.parse_args()
     if args.output.exists():
         parser.error(f"{args.output} already exists")

@@ -46,7 +46,7 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
 
 ## Build the GPU engine in this order
 
-1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a compatible CUDA 13 driver. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and streams 128 greedy tokens including after EOS.
+1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a CUDA 13.0 toolkit, a compatible NVIDIA driver, a C++ compiler, and Ninja. Set `CUDA_HOME` and prepend its `bin` directory to `PATH` so JIT compilation uses that toolkit. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and generates 128 greedy tokens including after EOS.
 
    ```bash
    uv pip install --prerelease=allow 'sglang==0.5.23'
@@ -54,24 +54,24 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
      --checkpoint checkpoints/Qwen3-0.6B --output results/sglang-baseline.json
    ```
 
-   The runner uses the serialized input IDs in `fixtures/qwen3-0.6b-batch1.json` at 128, 1,024, and 4,096 tokens. It saves GPU UUID, driver and runtime versions, request percentiles, all 127 token gaps per request, and input and output hashes. TTFT and TPOT measure wall time at the Python streaming interface, including scheduling and delivery. Each streamed update must deliver exactly one token.
+   The runner uses the serialized input IDs in `fixtures/qwen3-0.6b-batch1.json` at 128, 1,024, and 4,096 tokens. It saves GPU UUID, driver and runtime versions, request percentiles, all 127 token gaps per request, and input and output hashes. TTFT and TPOT measure wall time in SGLang’s static batch runner. Each timestamp follows transfer of a single completed token to the host. The next decode uses the device token.
 
    Capture a separate trace so profiling overhead stays out of the baseline JSON.
 
    ```bash
-   CUDA_VISIBLE_DEVICES=0 nsys profile --trace=cuda,nvtx --sample=none \
+   CUDA_VISIBLE_DEVICES=0 nsys profile --trace=cuda,nvtx --sample=none --cpuctxsw=none \
      --output=results/sglang-baseline python gpu_bench.py \
-     --checkpoint checkpoints/Qwen3-0.6B --repeats 1 \
+     --checkpoint checkpoints/Qwen3-0.6B --repeats 1 --profile \
      --output results/sglang-profile-samples.json
    ```
 
-   [SGLang 0.5.23 release and install instructions](https://github.com/sgl-project/sglang/releases/tag/v0.5.23) · [SGLang Engine API](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/srt/entrypoints/engine.py) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
+   [SGLang 0.5.23 release and install instructions](https://github.com/sgl-project/sglang/releases/tag/v0.5.23) · [SGLang static batch runner](https://github.com/sgl-project/sglang/blob/v0.5.23/python/sglang/benchmark/one_batch.py) · [Nsight Systems](https://docs.nvidia.com/nsight-systems/UserGuide/index.html)
 
 2. **Move the forward pass to CUDA.** Preserve the `prefill` and `decode` contract. Start with CUDA tensor ops, a preallocated device KV cache, and fused attention. Verify GPU FP32 against the reference, then introduce BF16 and compare against a BF16 reference with tolerances calibrated on real prompts. Keep token selection and position updates on the device when measuring decode.
 
 3. **Profile and test one change per run.** Use Nsight Systems to see launch gaps, copies, and synchronization. Measure kernel bottlenecks with Nsight Compute. Test CUDA Graph replay with stable buffer addresses for launch-bound decode. Test packed QKV projections or fused residual and RMSNorm if the trace implicates those operations. Measure wall time for request latency and CUDA events for GPU time.
 
-4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and streaming timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
+4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and token timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
 
    ```bash
    python harness.py compare --baseline results/sglang-baseline.json \
