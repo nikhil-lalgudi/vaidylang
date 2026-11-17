@@ -86,7 +86,7 @@ The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` 
    python tools/decode_trace.py results/candidate/decode.sqlite > results/candidate/trace-summary.json
    ```
 
-   The summary measures GPU kernel activity inside each decode range. The unprofiled benchmark JSON is the source of latency percentiles. Add `--fused-rms` to the BF16 verification and CUDA benchmark to use the Triton RMSNorm experiment.
+   The summary measures GPU kernel activity inside each decode range. The unprofiled benchmark JSON is the source of latency percentiles. Add `--fused-rms` to the BF16 verification and CUDA benchmark to use the Triton RMSNorm experiment. Add `--packed-projections` to combine Q/K/V and gate/up linear operations that use the same input.
 
 4. **Validate each patch.** Use the previous trace to choose one change. Save the patch, its hypothesis, forced and greedy parity output, unprofiled benchmark JSON, and an Nsight Systems trace in a directory named for the patch. Keep the baseline JSON and input IDs fixed. Use the same GPU and token timing boundary for the candidate and keep its run metadata and JSON fields compatible with the baseline. Run the existing comparison against the frozen baseline.
 

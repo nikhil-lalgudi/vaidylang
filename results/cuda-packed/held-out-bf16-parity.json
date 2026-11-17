@@ -1,0 +1,17 @@
+{
+  "passed": false,
+  "seed": 711,
+  "cuda_graph": true,
+  "fused_rms": true,
+  "packed_projections": true,
+  "dtype": "bfloat16",
+  "steps_per_path": 8,
+  "prompt_lengths": [
+    128,
+    1024,
+    4096
+  ],
+  "atol": 0.5,
+  "rtol": 0.025,
+  "first_failure": "teacher-forced parity failed at prompt length 128, step 2. Max absolute error 0.25, candidate token 11, oracle token 8, oracle top-2 margin 0."
+}
