@@ -61,8 +61,8 @@ def load_weights(path):
 class LearnedDraft:
     """Propose shortlisted tokens until the next prediction is uncertain."""
 
-    def __init__(self):
-        path = os.environ.get(WEIGHTS_ENV)
+    def __init__(self, path=None):
+        path = path or os.environ.get(WEIGHTS_ENV)
         if not path:
             raise ValueError(f"Set {WEIGHTS_ENV} to the trained draft .npz file")
         self.weights = load_weights(Path(path).expanduser().resolve())
