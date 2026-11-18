@@ -1,7 +1,7 @@
 """DeepSeek Engram token normalization, hash layout, and gated lookup.
 
 Derived from the pinned DeepSeek inference/engram.py and inference/model.py.
-See deepseek-cpu-reference.md and LICENSE.DeepSeek.
+See docs/deepseek-cpu-reference.md and LICENSE.DeepSeek.
 """
 
 import json

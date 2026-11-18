@@ -2,7 +2,7 @@
 
 The backbone follows the pinned DeepSeek model, including separate raw,
 compressed, and index caches. All mutable request data belongs to DeepSeekState.
-See deepseek-cpu-reference.md and LICENSE.DeepSeek.
+See docs/deepseek-cpu-reference.md and LICENSE.DeepSeek.
 """
 
 from collections import deque

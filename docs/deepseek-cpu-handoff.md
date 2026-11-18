@@ -1,6 +1,6 @@
 # Vaidylang handoff for DeepSeek CPU scaffolding
 
-Prepared November 17, 2026, America/Detroit.
+Historical handoff from November 17, 2026. For implementation status and reproduction commands, see the [DeepSeek CPU reference](deepseek-cpu-reference.md).
 
 ## Assignment and completion boundary
 
@@ -131,7 +131,7 @@ Retain n-gram and learned-draft CPU comparisons. Separate test/training sequence
 - [ ] A CPU report records proposal count, accepted count, emitted tokens per cycle, draft time, verification time, raw output IDs, and first mismatch.
 - [ ] The report identifies the synthetic/reduced model and CPU device. It identifies any DSpark behavior deferred for GPU validation.
 
-Historical H100 measurements establish why acceptance needs work. On the six-prompt Qwen3 suite, target-only decode reached about 806 tokens/s and tiled n-gram block 8 reached 1,121 tokens/s. Block 8 emitted 1.52 tokens per cycle across all cycles and 2.12 per verification cycle. Median drafting was about 0.004 ms and verification about 1.433 ms. The small learned draft reached roughly 775–781 tokens/s. These remain Qwen3/H100 observations. [Recorded experiment summary](results/speculative/summary.json)
+Historical H100 measurements establish why acceptance needs work. On the six-prompt Qwen3 suite, target-only decode reached about 806 tokens/s and tiled n-gram block 8 reached 1,121 tokens/s. Block 8 emitted 1.52 tokens per cycle across all cycles and 2.12 per verification cycle. Median drafting was about 0.004 ms and verification about 1.433 ms. The small learned draft reached roughly 775–781 tokens/s. These remain Qwen3/H100 observations. [Recorded experiment summary](../results/speculative/summary.json)
 
 ## Work item 4 — Numerical parity and regression coverage
 
@@ -153,7 +153,7 @@ The recorded Qwen3 cases requiring later GPU replay are below. Step numbers are 
 | Held-out seed 711, 4,096 input tokens | 15 | Existing scalar comparison exceeded tolerance for 3 logits against HF BF16 and zero against HF FP32. |
 | Held-out seed 711, 4,096 input tokens | 21 | Existing scalar comparison exceeded tolerance for 1,852 logits against HF BF16 and 43 against HF FP32. |
 
-The tiled verifier already matched scalar CUDA logits bit for bit on all 84 checked block rows, while FlashAttention verification matched 80 of 84 selected tokens and zero full logit vectors. This establishes agreement between the tiled paths on those rows. Oracle tolerance failures still need diagnosis. [Identical-prefix replay](results/speculative/parity-tiled.json) · [Frozen 128-token diagnostic](results/cuda-tuning/final-tiled/frozen-128-output-diagnostic.json) · [SGLang tie evidence](results/sglang-output-diagnostic.json)
+The tiled verifier already matched scalar CUDA logits bit for bit on all 84 checked block rows, while FlashAttention verification matched 80 of 84 selected tokens and zero full logit vectors. This establishes agreement between the tiled paths on those rows. Oracle tolerance failures still need diagnosis. [Identical-prefix replay](../results/speculative/parity-tiled.json) · [Frozen 128-token diagnostic](../results/cuda-tuning/final-tiled/frozen-128-output-diagnostic.json) · [SGLang tie evidence](../results/sglang-output-diagnostic.json)
 
 **CPU acceptance**
 

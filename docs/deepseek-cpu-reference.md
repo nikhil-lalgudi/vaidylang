@@ -1,6 +1,8 @@
 # DeepSeek V4.1 Flash CPU reference
 
-The text topology and storage encodings are derived from the DeepSeek V4.1 Flash [release repository](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/314113f8a7dadb388215396ba5fbee2c610a04d6), revision `314113f8a7dadb388215396ba5fbee2c610a04d6`. DeepSeek's MIT license is retained in `LICENSE.DeepSeek`. The CPU implementation uses NumPy reference arithmetic on reduced buffers.
+Run the commands below from the repository root. See the [report index](../results/README.md) for archived runs.
+
+The text topology and storage encodings are derived from the DeepSeek V4.1 Flash [release repository](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/314113f8a7dadb388215396ba5fbee2c610a04d6), revision `314113f8a7dadb388215396ba5fbee2c610a04d6`. DeepSeek's MIT license is retained in [LICENSE.DeepSeek](../LICENSE.DeepSeek). The CPU implementation uses NumPy reference arithmetic on reduced buffers.
 
 | Pinned file | SHA-256 |
 | --- | --- |
@@ -42,7 +44,7 @@ The reduced checkpoint has six backbone layers, three DSpark stages, vocabulary 
 | Scalar target versus independent cache-free FP64 oracle, max absolute logit error | `1.428731e-6` | `5.132859e-7` |
 | Scalar target versus frozen oracle IDs | 16/16 | 16/16 |
 
-The independent oracle rebuilds raw and compressed prefixes from scratch and separately interprets weight bytes, computes activation rounding, and evaluates the attention, Engram, hyper-connection, and expert formulas. The comparison uses `atol=3e-5, rtol=2e-5` for FP32 projection and residual accumulation versus FP64. Verifier rows use exact comparison. The report preserves prefix IDs and hash, selected token and rank, error, tolerance violations, and first differing operation. Both fixtures had zero tolerance violations. The injected rotary regression localized the first difference to position 5, layer 0, operation `raw_kv`, and captures the two tensor values. [Dense parity](results/deepseek-cpu/parity-dense.json) · [Quantized parity](results/deepseek-cpu/parity-quantized.json)
+The independent oracle rebuilds raw and compressed prefixes from scratch and separately interprets weight bytes, computes activation rounding, and evaluates the attention, Engram, hyper-connection, and expert formulas. The comparison uses `atol=3e-5, rtol=2e-5` for FP32 projection and residual accumulation versus FP64. Verifier rows use exact comparison. The report preserves prefix IDs and hash, selected token and rank, error, tolerance violations, and first differing operation. Both fixtures had zero tolerance violations. The injected rotary regression localized the first difference to position 5, layer 0, operation `raw_kv`, and captures the two tensor values. [Dense parity](../results/deepseek-cpu/parity-dense.json) · [Quantized parity](../results/deepseek-cpu/parity-quantized.json)
 
 DSpark reads the mean across hyper-connection streams immediately before each configured target layer. Its fixed five-slot draft uses the target feature window, a verified seed token, and four noise-token slots. It adds a Markov logit bias conditioned on the preceding token and computes confidence from the matching Markov embedding and draft hidden state. An independent FP64 comparison of all three stages yielded the same draft IDs and max absolute errors of `6.455e-7` for logits and `8.726e-8` for confidence, using `atol=rtol=1e-5`. Draft KV is recomputed from committed target features. The target verifier clones the request for staging and replays only verified inputs for a partial commit, including the raw ring, pending compressor group, compressed KV, index keys, Engram history, and target features. Padding rows never advance cache state.
 
@@ -54,9 +56,9 @@ All 27 held-out CPU speculative requests matched target-only greedy output exact
 | 4 | 3 | 3 / 108 | 1.07 | 258 ms | 972 ms |
 | 8 | 5 | 3 / 165 | 1.07 | 258 ms | 1,222 ms |
 
-The width includes the previous token consumed by the verifier. The fixed draft head still computes all five slots at each supported width. It supplies at most five proposals even at width eight. All 27 comparisons report `first_mismatch: null`. [Per-request IDs, timings, and draft acceptance](results/deepseek-cpu/speculative.json)
+The width includes the previous token consumed by the verifier. The fixed draft head still computes all five slots at each supported width. It supplies at most five proposals even at width eight. All 27 comparisons report `first_mismatch: null`. [Per-request IDs, timings, and draft acceptance](../results/deepseek-cpu/speculative.json)
 
-Placement accounts for 510,286,023,000 stored tensor bytes across 48 shards from 10,684,928 bytes of Safetensors JSON headers. All 96,085 entries have an assigned placement. At eight ranks, batch size 1, and 1,048,576 context tokens, estimated text weights, scales, and persistent state total 70.30 GB per rank. Selected one-query scratch buffers add about 1.10 GB per rank. Vision tensors add up to 0.97 GB per rank if retained. The placement report includes 1, 2, 4 and 8 ranks, dtype and shape verification, and the allocation assumptions. [Placement and memory detail](results/deepseek-cpu/placement.md)
+Placement accounts for 510,286,023,000 stored tensor bytes across 48 shards from 10,684,928 bytes of Safetensors JSON headers. All 96,085 entries have an assigned placement. At eight ranks, batch size 1, and 1,048,576 context tokens, estimated text weights, scales, and persistent state total 70.30 GB per rank. Selected one-query scratch buffers add about 1.10 GB per rank. Vision tensors add up to 0.97 GB per rank if retained. The placement report includes 1, 2, 4 and 8 ranks, dtype and shape verification, and the allocation assumptions. [Placement and memory detail](../results/deepseek-cpu/placement.md)
 
 ## Reproduce on CPU
 
@@ -96,7 +98,7 @@ python3 tools/deepseek_placement.py --checkpoint "$metadata_dir" \
   --headers "$metadata_dir/headers" --output "$report_dir/placement.json"
 ```
 
-The managed CPU suite ran 75 tests with 63 passes and 12 skips. The in-process rank tests ran for world sizes 1, 2, 4, and 8. The Gloo test also passed independently in two CPU processes with local loopback and shared-memory access.
+The initial managed CPU run recorded 75 tests with 63 passes and 12 skips. The in-process rank tests ran for world sizes 1, 2, 4, and 8. The Gloo test also passed independently in two CPU processes with local loopback and shared-memory access.
 
 ```bash
 GLOO_SOCKET_IFNAME=lo0 python3 -m unittest -v \
@@ -118,6 +120,72 @@ GLOO_SOCKET_IFNAME=lo0 python3 -m unittest -v \
 | `test_cuda_engine.CudaEngineTests.test_tiled_block_attention_matches_scalar_across_tile_boundary` | Requires CUDA |
 | `test_cuda_engine.CudaEngineTests.test_tiled_decode_masks_padding_and_appends_gqa_cache` | Requires CUDA |
 
+## Prepare prompts and generate
+
+### Inspect a checkpoint
+
+The shared checkpoint reader accepts the published DeepSeek V4.1 Flash config and Safetensors index. Inspect its metadata before downloading the weight shards.
+
+```bash
+python3 harness.py inspect-checkpoint --checkpoint checkpoints/DeepSeek-V4.1-Flash --metadata-only
+```
+
+`Checkpoint.open(path).read_tensor(name)` reads a local tensor using the native PyTorch dtype. The CPU DeepSeek loader can also interpret stored E8M0 and packed FP4 bytes directly with NumPy.
+
+### Generate from text, messages, or token IDs
+
+`engine.load_engine` dispatches from the checkpoint's root model type. The same generation command loads Qwen3 and DeepSeek checkpoints and takes integer token IDs. The deterministic DeepSeek fixture uses the published text topology with smaller dimensions and stores FP8 and packed FP4 weights in two local shards.
+
+```bash
+fixture_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$fixture_dir"
+python3 harness.py generate --checkpoint "$fixture_dir" --ids 2 11 3 7 9 --new-tokens 16
+```
+
+Install `tokenizers` for text input, then use the checkpoint's local `tokenizer.json`.
+DeepSeek wraps plain text as a user turn with its pinned V4.1 encoder. Qwen3
+tokenizes plain text as a raw completion prefix. The reduced tokenizer below
+uses a synthetic vocabulary and exercises the CLI on the reduced weights.
+
+```bash
+python3 -m pip install tokenizers
+fixture_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$fixture_dir" --with-tokenizer
+python3 harness.py generate --checkpoint "$fixture_dir" --text 'Hello, world!' --new-tokens 4
+python3 harness.py generate --checkpoint "$fixture_dir" --text-file prompt.txt
+python3 harness.py generate --checkpoint "$fixture_dir" --messages messages.json
+```
+
+`messages.json` is a JSON array of DeepSeek role and content objects, such as
+`[{"role":"system","content":"Be brief."},{"role":"user","content":"Hello, world!"}]`.
+Use `--thinking` with an optional `--reasoning-effort` from 1 to 100, or
+`low`, `high` or `max`, to use the pinned reasoning format. Text and chat stop at checkpoint EOS and return decoded text,
+the tokenizer SHA-256, and the prompt and continuation IDs with their hashes.
+The continuation IDs include EOS when emitted. `--ids` replays a fixed number
+of steps and works with checkpoints that have no tokenizer.
+
+### Generate from images
+
+Install PyTorch, Pillow, and `tokenizers`, then build the reduced vision
+fixture. Use `<image>path.png</image>` in plain text or a structured
+`{"type":"image_url","image_url":{"url":"path.png"}}` block in a message.
+Both accept local paths and base64 data URLs. Files named inside a prompt
+file are resolved relative to that file.
+
+```bash
+vision_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$vision_dir" --vision
+python3 harness.py generate --checkpoint "$vision_dir" \
+  --text 'What is shown? <image>fixtures/deepseek-images/signal-red.png</image>' --new-tokens 8
+python3 harness.py prepare-prompt --checkpoint "$vision_dir" --messages messages.json
+```
+
+`prepare-prompt` also works with just the published `config.json` and
+`tokenizer.json`. It emits expanded IDs, per-token image types, image span
+positions, grids, source hashes and BF16 patch hashes without loading weights.
+Reduced vision generation uses synthetic weights, so it tests pixel input,
+embedding replacement, routing, Engram masking and decode state.
+
 ## CPU vision checks
 
 The reduced engine accepts local images as actual pixel input. The pinned image
@@ -134,7 +202,7 @@ upstream carrot and corn images at the published resize limit, using both
 BF16 tensors and weights expanded to FP32. A separate BF16 check used
 a 12-token image cap and produced six finite rows per image. These runs use
 published vision weights and stop at the aligner.
-[Published resize, BF16](results/deepseek-cpu/vision-bf16-published-resize.json) · [Published resize, FP32](results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](results/deepseek-cpu/vision-bf16-cap12.json)
+[Published resize, BF16](../results/deepseek-cpu/vision-bf16-published-resize.json) · [Published resize, FP32](../results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](../results/deepseek-cpu/vision-bf16-cap12.json)
 
 ```bash
 vision_dir=$(mktemp -d)
@@ -159,7 +227,7 @@ The reports include source image, patch and aligned-feature hashes.
 
 ## 100-prompt workload
 
-The [manifest](fixtures/deepseek-prompts.jsonl) contains 100 distinct cases, ten
+The [manifest](../fixtures/deepseek-prompts.jsonl) contains 100 distinct cases, ten
 each for coding, logic and math, multilingual input, multi-turn chat,
 extraction, summarization, token boundaries, chat and tool protocol,
 long documents, and images. The long documents place facts and plausible
@@ -172,11 +240,11 @@ the rendered prompt with the tokenizer and leaves space for
 
 | CPU workload | Prompts | Longest input | Generated tokens |
 | --- | ---: | ---: | ---: |
-| [Published tokenizer and image preparation](results/deepseek-cpu/prompts-frozen.json.gz) | 100 | 1,048,427 | |
-| [Reduced dense model](results/deepseek-cpu/prompts-smoke-dense.json.gz) | 100 | 512 | 800 |
-| [Reduced FP8/FP4 model](results/deepseek-cpu/prompts-smoke-quantized.json.gz) | 100 | 512 | 800 |
-| [Reduced dense model, long continuation](results/deepseek-cpu/prompt-32743-dense.json.gz) | 1 | 32,743 | 8 |
-| [Reduced FP8/FP4 model, long continuation](results/deepseek-cpu/prompt-32743-quantized.json.gz) | 1 | 32,743 | 8 |
+| [Published tokenizer and image preparation](../results/deepseek-cpu/prompts-frozen.json.gz) | 100 | 1,048,427 | |
+| [Reduced dense model](../results/deepseek-cpu/prompts-smoke-dense.json.gz) | 100 | 512 | 800 |
+| [Reduced FP8/FP4 model](../results/deepseek-cpu/prompts-smoke-quantized.json.gz) | 100 | 512 | 800 |
+| [Reduced dense model, long continuation](../results/deepseek-cpu/prompt-32743-dense.json.gz) | 1 | 32,743 | 8 |
+| [Reduced FP8/FP4 model, long continuation](../results/deepseek-cpu/prompt-32743-quantized.json.gz) | 1 | 32,743 | 8 |
 
 These archived reports predate the revisions to the ten long-document prompts
 and two tool prompts. The frozen artifact records the exact prompt IDs, hashes, token budgets,
@@ -275,7 +343,7 @@ the answer after the reasoning delimiter. Free-form summaries use exact
 reference wording. CPU smoke runs can exercise the same checkers with
 `--score`. Replay predictions are conditioned on the reference continuation.
 
-The [CPU workflow](.github/workflows/cpu.yml) runs on pushes to `main` and
+The [CPU workflow](../.github/workflows/cpu.yml) runs on pushes to `main` and
 pull requests. It requires native E8M0 reads, two-process Gloo, parity with
 the pinned tokenizer and prompt fixtures, and reduced vision generation.
 Trigger **CPU inference** manually in GitHub Actions to freeze all 100 prompts
@@ -292,7 +360,7 @@ patch bytes, patch grids, image types and expanded IDs. All 129,280 token
 mappings matched the upstream Engram implementation and compressed to 99,092
 entries. Primes, offsets and multipliers matched. Across six inputs, all
 95,664 hashes matched for both full-prefix and split prefill/decode against
-upstream, including masked image positions. [Differential report](results/deepseek-cpu/upstream-checks.json)
+upstream, including masked image positions. [Differential report](../results/deepseek-cpu/upstream-checks.json)
 
 ```bash
 upstream_dir=$(mktemp -d)
@@ -313,7 +381,7 @@ parity reports and the Qwen3 CPU archive report matched the prior reports.
 The pinned Qwen3-0.6B weights also ran on CPU through the new text entry point.
 The prompt `The capital of France is` produced ` Paris. The capital of Italy
 is Rome` in eight greedy tokens. Replaying its five input IDs returned all
-eight output IDs and the same hashes. [Qwen3 text smoke and checkpoint hashes](results/deepseek-cpu/qwen3-text-smoke.json)
+eight output IDs and the same hashes. [Qwen3 text smoke and checkpoint hashes](../results/deepseek-cpu/qwen3-text-smoke.json)
 
 ## GPU validation pending
 
@@ -323,7 +391,7 @@ eight output IDs and the same hashes. [Qwen3 text smoke and checkpoint hashes](r
 - Measure peak memory during load, prefill, decoding and graph capture. Validate raw-window rollover and compressed/index-cache growth at longer contexts through the published limit on an appropriate host. Measure allocator, kernel and collective workspace beyond the modeled buffers.
 - Capture scalar and block CUDA graphs, then replay across compression boundaries and with rejected suffixes, EOS, padded slots, and consecutive requests. Compare every valid verifier row with scalar target logits on the same prefix.
 - Validate all DSpark stages on the full checkpoint, target feature taps, fixed-block behavior, Markov/confidence outputs, accepted-prefix rollback and actual proposal acceptance. Measure TTFT, token gaps, draft and verifier timing, and throughput only on the selected hardware.
-- Replay the archived Qwen3 disagreements and keep oracle tolerance distinct from exact sequence agreement. The historical BF16 tolerance is `atol=0.5, rtol=0.025`. The CPU archive report reproduces all six prompt hashes and the frozen step-0 prefix hash. The other six hashes need the original scalar continuation IDs, which earlier artifacts omitted. GPU replay now writes the scalar IDs and their digest. [Archive and replay inputs](results/deepseek-cpu/qwen3-archive-replay.json)
+- Replay the archived Qwen3 disagreements and keep oracle tolerance distinct from exact sequence agreement. The historical BF16 tolerance is `atol=0.5, rtol=0.025`. The CPU archive report reproduces all six prompt hashes and the frozen step-0 prefix hash. The other six hashes need the original scalar continuation IDs, which earlier artifacts omitted. GPU replay now writes the scalar IDs and their digest. [Archive and replay inputs](../results/deepseek-cpu/qwen3-archive-replay.json)
 
 | Qwen3 case | Zero-based step | GPU replay target |
 | --- | ---: | --- |

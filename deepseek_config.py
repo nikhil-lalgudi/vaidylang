@@ -1,7 +1,7 @@
 """DeepSeek V4.1 text configuration and public checkpoint tensor inventory.
 
 Topology and tensor names follow DeepSeek's model.py and convert.py at the
-revision recorded in deepseek-cpu-reference.md. See LICENSE.DeepSeek.
+revision recorded in docs/deepseek-cpu-reference.md. See LICENSE.DeepSeek.
 """
 
 from copy import deepcopy

@@ -1,6 +1,6 @@
 """NumPy reference operations derived from the pinned DeepSeek model and kernels.
 
-See deepseek-cpu-reference.md and LICENSE.DeepSeek.
+See docs/deepseek-cpu-reference.md and LICENSE.DeepSeek.
 """
 
 import math
