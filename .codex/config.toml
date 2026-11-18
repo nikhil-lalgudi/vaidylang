@@ -1,0 +1,4 @@
+# Match the CPU workflow's thread settings for test and benchmark commands.
+[shell_environment_policy.set]
+OPENBLAS_NUM_THREADS = "1"
+OMP_NUM_THREADS = "1"

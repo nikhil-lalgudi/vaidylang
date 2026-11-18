@@ -1,0 +1,12 @@
+.git
+.venv
+**/__pycache__
+**/.DS_Store
+checkpoints
+reports
+**/*.nsys-rep
+**/*.qdrep
+**/*.sqlite
+.env
+.env.*
+.claude/settings.local.json

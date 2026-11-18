@@ -5,3 +5,4 @@ checkpoints/
 *.nsys-rep
 *.qdrep
 *.sqlite
+.claude/settings.local.json

@@ -36,6 +36,10 @@ OPENBLAS_NUM_THREADS=1 python3 harness.py generate \
   --checkpoint "$fixture_dir" --ids 2 11 3 7 9 --new-tokens 16
 ```
 
+The [CPU container guide](docker/README.md) covers Docker and VS Code Dev
+Containers. The [Claude](.claude/settings.json) and [Codex](.codex/config.toml)
+project settings use the CPU workflow’s thread limits.
+
 ## Guides and reports
 
 - [DeepSeek CPU reference](docs/deepseek-cpu-reference.md) covers checkpoint inspection, text and image inputs, numerical parity, and distributed placement.
