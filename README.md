@@ -36,7 +36,19 @@ The shared checkpoint reader accepts the published DeepSeek V4.1 Flash config an
 python harness.py inspect-checkpoint --checkpoint checkpoints/DeepSeek-V4.1-Flash --metadata-only
 ```
 
-`Checkpoint.open(path).read_tensor(name)` reads an individual local tensor with its stored encoding. DeepSeek's FP8 scales require PyTorch and Safetensors versions that support E8M0. The inference commands use Vaidylang's Qwen3 forward pass. DeepSeek execution requires a model-specific forward pass.
+`Checkpoint.open(path).read_tensor(name)` reads a local tensor using the native PyTorch dtype. The CPU DeepSeek loader can also interpret stored E8M0 and packed FP4 bytes directly with NumPy.
+
+## Run reduced DeepSeek V4.1 Flash on CPU
+
+`engine.load_engine` dispatches from the checkpoint's root model type. The same generation command loads Qwen3 and DeepSeek checkpoints and takes integer token IDs. The deterministic DeepSeek fixture uses the published text topology with smaller dimensions and stores FP8 and packed FP4 weights in two local shards.
+
+```bash
+fixture_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$fixture_dir"
+python3 harness.py generate --checkpoint "$fixture_dir" --ids 2 11 3 7 9 --new-tokens 16
+```
+
+The CPU reference materializes reduced weights and uses scalar cache updates, including when verifying a block of draft tokens. The published checkpoint is available to the metadata and placement tools. CPU reproduction commands, numerical results, and pending GPU checks are in the [DeepSeek CPU reference handoff](deepseek-cpu-reference.md).
 
 ## Check the public Qwen3 checkpoint
 
