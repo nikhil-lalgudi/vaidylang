@@ -170,6 +170,13 @@ class DSparkIntegrationTests(unittest.TestCase):
         cls.engine = load_engine(quantized)
         cls.dense_engine = load_engine(dense)
 
+    def assert_target_state_equal(self, state, expected):
+        for name, wanted in vars(expected).items():
+            actual = getattr(state, name)
+            if name == "raw":
+                actual, wanted = [list(ring) for ring in actual], [list(ring) for ring in wanted]
+            np.testing.assert_equal(actual, wanted, err_msg=f"request state field {name}")
+
     def test_all_draft_stages_match_independent_fp64_reference(self):
         engine = self.dense_engine
         _, state = engine.prefill([3, 5, 7, 11, 13, 17], 24)
@@ -233,12 +240,80 @@ class DSparkIntegrationTests(unittest.TestCase):
         transaction.stage([4, 9, 2, 6])
         transaction.commit(2)
         _, expected = engine.prefill([*ids, 4, 9], 24)
-        for name in vars(expected):
-            actual_value, expected_value = getattr(transaction.state, name), getattr(expected, name)
-            if name == "raw":
-                actual_value, expected_value = [list(rows) for rows in actual_value], [list(rows) for rows in expected_value]
-            np.testing.assert_equal(actual_value, expected_value, err_msg=f"request state field {name}")
+        self.assert_target_state_equal(transaction.state, expected)
         np.testing.assert_array_equal(draft.forward(transaction.state, 2).logits, draft.forward(expected, 2).logits)
+
+    def test_seeded_block_transactions_match_scalar_cache_and_next_logits(self):
+        from copy import deepcopy
+        from speculative_cpu import VerifiedState
+
+        for engine in (self.dense_engine, self.engine):
+            rng = np.random.default_rng(5538)
+            for length in range(2, 12):
+                with self.subTest(quantized=bool(engine.config.quantization_config), length=length):
+                    width = (2, 4, 8)[length % 3]
+                    capacity = length + 2 * width + 1
+                    ids = rng.integers(0, engine.config.vocab_size, length).tolist()
+                    split = int(rng.integers(1, length))
+                    _, staged = engine.prefill(ids[:split], capacity)
+                    block_logits = engine.forward(ids[split:], staged)[-1]
+                    _, scalar = engine.prefill(ids[:1], capacity)
+                    for token in ids[1:]:
+                        scalar_logits = engine.decode(token, scalar)
+                    np.testing.assert_array_equal(block_logits, scalar_logits)
+                    transaction = VerifiedState(engine, staged)
+                    for accepted in (0, int(rng.integers(1, width)), width):
+                        inputs = rng.integers(0, engine.config.vocab_size, width).tolist()
+                        rows = transaction.stage(inputs + [-1] * (8 - width), valid_count=width)
+                        trial = deepcopy(scalar)
+                        for index, token in enumerate(inputs):
+                            np.testing.assert_array_equal(rows[index], engine.decode(token, trial))
+                        transaction.commit(accepted)
+                        for token in inputs[:accepted]:
+                            engine.decode(token, scalar)
+                        self.assert_target_state_equal(transaction.state, scalar)
+                        probe = int(rng.integers(0, engine.config.vocab_size))
+                        np.testing.assert_array_equal(
+                            engine.decode(probe, deepcopy(transaction.state)),
+                            engine.decode(probe, deepcopy(scalar)),
+                        )
+
+    def test_seeded_consecutive_speculative_requests_stop_at_scalar_eos(self):
+        from unittest.mock import patch
+        from speculative_cpu import VerifiedState, speculative_tokens, target_tokens
+
+        engine = self.engine
+        rng = np.random.default_rng(7475)
+        transactions = []
+
+        def observe_state(engine, state):
+            transaction = VerifiedState(engine, state)
+            transactions.append(transaction)
+            return transaction
+
+        for request in range(12):
+            with self.subTest(request=request):
+                ids = rng.integers(0, engine.config.vocab_size, request + 1).tolist()
+                reference = list(target_tokens(engine, ids, 12))
+                eos = reference[(0, 2, 4, -1)[request % 4]]
+                expected = reference[:reference.index(eos) + 1]
+                width = (4, 8)[request % 2]
+                keep = (0, 1, width - 1)[(request // 2) % 3]
+
+                def propose(history, limit, _):
+                    start = len(history) - len(ids)
+                    choices = reference[start:start + limit]
+                    if keep < len(choices):
+                        choices[keep] = (choices[keep] + 1) % engine.config.vocab_size
+                    return choices
+
+                with patch("speculative_cpu.VerifiedState", side_effect=observe_state):
+                    actual = list(speculative_tokens(engine, ids, 12, width, propose, eos_token_id=eos))
+                self.assertEqual(actual, expected)
+                _, scalar = engine.prefill(ids, len(ids) + 11)
+                for token in expected[:-1]:
+                    engine.decode(token, scalar)
+                self.assert_target_state_equal(transactions[-1].state, scalar)
 
     def test_cpu_benchmark_reports_real_held_out_acceptance(self):
         from tools.cpu_speculative_bench import evaluate, prompt_split

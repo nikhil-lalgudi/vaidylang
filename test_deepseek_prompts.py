@@ -1,4 +1,5 @@
 from collections import Counter
+from importlib.util import find_spec
 import json
 from pathlib import Path
 import tempfile
@@ -16,6 +17,49 @@ except ImportError:
 
 
 class CorpusTests(unittest.TestCase):
+    @unittest.skipUnless(find_spec("jsonschema"), "requires jsonschema")
+    def test_answer_checkers_enforce_structure_order_and_tool_argument_types(self):
+        from tools.deepseek_answers import score_answer
+        from tools.deepseek_prompts import DEFAULT_SUITE, read_suite
+
+        cases = {row["id"]: row for row in read_suite(DEFAULT_SUITE.read_bytes())}
+
+        def score(case_id, text):
+            case = cases[case_id]
+            return score_answer(case["expected"], case.get("checker"), text,
+                                thinking=case.get("thinking", False))["passed"]
+
+        self.assertTrue(score("extraction-receipt", ' { "total": 14.5, "pads": 2 } '))
+        self.assertFalse(score("extraction-receipt", '{"pads":2,"total":14.5,"extra":0}'))
+        self.assertFalse(score("extraction-receipt", '{"pads":0,"pads":2,"total":14.5}'))
+        self.assertFalse(score("extraction-receipt", '{"pads":true,"total":14.5}'))
+        self.assertTrue(score("vision-signal-order-red-blue", '["red", "blue"]'))
+        self.assertFalse(score("vision-signal-order-red-blue", '["blue", "red"]'))
+        self.assertTrue(score("chat-protocol-effort-floor", "30 minus 2.</think>28"))
+        self.assertFalse(score("chat-protocol-effort-floor", "28"))
+        self.assertFalse(score("token-boundaries-combining-acute", "Yes"))
+
+        call = (
+            '\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name="scale_recipe">\n'
+            '<｜DSML｜ parameter name="recipe" string="true">Jade</｜DSML｜ parameter>\n'
+            '<｜DSML｜ parameter name="factors" string="false">[2,3]</｜DSML｜ parameter>\n'
+            '<｜DSML｜ parameter name="round_to_grams" string="false">false</｜DSML｜ parameter>\n'
+            '</｜DSML｜ invoke>\n</｜DSML｜ calls>'
+        )
+        case_id = "chat-protocol-typed-tool-arguments"
+        self.assertTrue(score(case_id, call))
+        self.assertFalse(score(case_id, call.replace("scale_recipe", "read_sample")))
+        self.assertFalse(score(case_id, call.replace("[2,3]", "[3,2]")))
+        self.assertFalse(score(case_id, call.replace(">false<", ">0<")))
+        self.assertFalse(score(case_id, call.removesuffix("</｜DSML｜ calls>")))
+        namespaced_call = (
+            '\n\n<｜DSML｜ calls>\n<｜DSML｜ invoke name="catalog::swatch">\n'
+            '<｜DSML｜ parameter name="code" string="true">P-2</｜DSML｜ parameter>\n'
+            '</｜DSML｜ invoke>\n</｜DSML｜ calls>'
+        )
+        self.assertTrue(score("chat-protocol-namespaced-tool", namespaced_call))
+        self.assertFalse(score("chat-protocol-namespaced-tool", namespaced_call.replace("catalog::", "")))
+
     def test_corpus_covers_100_distinct_prompts(self):
         from tools.deepseek_prompts import DEFAULT_SUITE, read_suite
 
@@ -67,6 +111,23 @@ class WorkloadTests(unittest.TestCase):
             read_suite(duplicate.encode("utf-8"))
         with self.assertRaisesRegex(ValueError, "exactly one prompt source"):
             read_suite(json.dumps(dict(row, messages=[])).encode("utf-8"))
+
+    def test_document_places_facts_and_distractors_at_separate_positions(self):
+        from tools.deepseek_prompts import _compile_document
+
+        spec = {
+            "heading": "Log", "filler": "one two three", "question": "Where is the fact?",
+            "target_tokens": 500, "facts": [
+                {"at": 0.85, "text": "late fact"},
+                {"at": 0.1, "text": "early distractor"},
+                {"at": 0.5, "text": "middle fact"},
+            ],
+        }
+        text, words = _compile_document(spec, str.split, None)
+        self.assertGreaterEqual(len(words), 498)
+        self.assertLessEqual(len(words), 500)
+        for fragment, location in (("early distractor", 0.1), ("middle fact", 0.5), ("late fact", 0.85)):
+            self.assertAlmostEqual(text.index(fragment) / len(text), location, delta=0.04)
 
     def test_smoke_records_the_prefix_before_every_generated_token(self):
         from engine import load_engine

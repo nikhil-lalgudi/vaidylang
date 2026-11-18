@@ -162,10 +162,11 @@ The reports include source image, patch and aligned-feature hashes.
 The [manifest](fixtures/deepseek-prompts.jsonl) contains 100 distinct cases, ten
 each for coding, logic and math, multilingual input, multi-turn chat,
 extraction, summarization, token boundaries, chat and tool protocol,
-long documents, and images. The ten long documents place a fact near the
-beginning, repeat a controlled distractor passage, and ask about the fact at
-the end. Edit a document's `target_tokens` to change its length. The compiler
-measures the rendered prompt with the tokenizer and leaves space for
+long documents, and images. The long documents place facts and plausible
+distractors at different points in the repeated passage. Each document's
+`facts` entries give the text and its fractional position `at` among the
+filler blocks. Edit `target_tokens` to change its length. The compiler measures
+the rendered prompt with the tokenizer and leaves space for
 `new_tokens`. For an existing document, use `harness.py prepare-prompt
 --text-file` with the file path.
 
@@ -177,7 +178,8 @@ measures the rendered prompt with the tokenizer and leaves space for
 | [Reduced dense model, long continuation](results/deepseek-cpu/prompt-32743-dense.json.gz) | 1 | 32,743 | 8 |
 | [Reduced FP8/FP4 model, long continuation](results/deepseek-cpu/prompt-32743-quantized.json.gz) | 1 | 32,743 | 8 |
 
-The frozen artifact records the exact prompt IDs, hashes, token budgets,
+These archived reports predate the revisions to the ten long-document prompts
+and two tool prompts. The frozen artifact records the exact prompt IDs, hashes, token budgets,
 expected answers, and expanded image spans. It contains 2,102,202 prompt
 tokens and 12 image spans. The reduced runs use the published tokenizer
 and its real Engram map with synthetic weights. The 100-case runs use a
@@ -211,10 +213,75 @@ case and `--document-cap` to limit the generated documents for a smaller run.
 To reproduce either 32,743-token run, create the fixture with `--context 65536`
 and omit `--vision`, then use `--case long-context-million --document-cap 32768
 --output-cap 8`.
-Before replay, compare the frozen prompt digest and token types. For image
-prompts, also compare each ordered span's source image and BF16 patch hashes.
-Compare logits on the reference continuation prefix even after a candidate
-model emits a different token.
+### Capture and replay reference logits
+
+`replay` checks the prompt IDs, token types, ordered image spans, tokenizer and
+EOS IDs. It feeds the reference's greedy choice to the candidate at each step,
+even after the candidate chooses a different token or predicts EOS. Step zero
+compares logits immediately after prefill. The report gives the first
+different full-vector digest, the first different greedy token, and the
+competing vocabulary entries and their scores. Margins subtract the competing
+token's score from the reference winner's score on each engine. When both
+engines choose the same token, the competing token is the reference runner-up.
+
+Use `--capture-logits` to save the complete float32 vectors in a compressed NPZ
+alongside the report. Supply that archive as `--reference-logits` to add the
+maximum vocabulary error, its token and scores, and the first step beyond
+`--atol + --rtol * abs(reference)`. With a report alone, replay can compare
+hashes and top-five scores. A reference score outside its saved top five is
+unavailable in this mode. Capture writes about 0.49 MiB per generated token
+before compression for the published vocabulary.
+
+```bash
+python3 -m tools.deepseek_prompts smoke --checkpoint "$report_dir/reduced" \
+  --case vision-signal-order-red-blue --output-cap 4 \
+  --capture-logits "$report_dir/reference.npz" --output "$report_dir/reference.json.gz"
+python3 -m tools.deepseek_prompts replay --checkpoint "$report_dir/reduced" \
+  --reference "$report_dir/reference.json.gz" --reference-logits "$report_dir/reference.npz" \
+  --output "$report_dir/replay.json.gz"
+```
+
+For a published-model reference, install the pinned [upstream inference
+requirements](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/314113f8a7dadb388215396ba5fbee2c610a04d6/inference)
+and `jsonschema`, and use its `convert.py` to prepare the tensor-parallel shards.
+The capture command verifies the upstream inference files and the published
+config and tokenizer artifacts. Give `--checkpoint` the original local
+checkpoint or a metadata directory with the published `config.json`,
+`tokenizer.json`, and `tokenizer_config.json`.
+
+```bash
+torchrun --nproc-per-node "$MP" -m tools.deepseek_prompts upstream \
+  --checkpoint "$HF_CKPT_PATH" --upstream-source "$UPSTREAM_ROOT/inference" \
+  --converted-checkpoint "$CONVERTED_CKPT_PATH" --case coding-aliasing \
+  --capture-logits "$report_dir/upstream.npz" --output "$report_dir/upstream.json.gz"
+```
+
+The command reads the logits returned by the pinned
+[`Transformer.forward`](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/blob/314113f8a7dadb388215396ba5fbee2c610a04d6/inference/model.py)
+after one full prefill and each single-token decode. Rank zero writes the
+report. Use `--case` or `--document-cap` to fit the prefill in GPU memory.
+For a numerical parity measurement, replay with a candidate using the same
+weights and input preprocessing. The CPU loader currently supports reduced
+checkpoints up to 512 MiB of stored tensors.
+
+### Score answers and run CPU CI
+
+Upstream reports include per-case answer scores and an aggregate pass count.
+The default checker compares exact text after trimming surrounding whitespace.
+Structured checks validate JSON against the case schema and compare the
+values, including array and image order. Tool checks parse the DeepSeek tool
+call and compare its qualified name and typed arguments. Thinking cases score
+the answer after the reasoning delimiter. Free-form summaries use exact
+reference wording. CPU smoke runs can exercise the same checkers with
+`--score`. Replay predictions are conditioned on the reference continuation.
+
+The [CPU workflow](.github/workflows/cpu.yml) runs on pushes to `main` and
+pull requests. It requires native E8M0 reads, two-process Gloo, parity with
+the pinned tokenizer and prompt fixtures, and reduced vision generation.
+Trigger **CPU inference** manually in GitHub Actions to freeze all 100 prompts
+and run dense and quantized smoke tests. Both smoke runs cap generated
+documents at 512 tokens and each continuation at eight tokens. The workflow
+retains the reports as `deepseek-cpu-reports` for 30 days.
 
 ## Compare the pinned upstream CPU paths
 

@@ -1,0 +1,5 @@
+numpy==2.4.4
+safetensors==0.7.0
+tokenizers==0.22.2
+Pillow==11.0.0
+jsonschema==4.26.0
