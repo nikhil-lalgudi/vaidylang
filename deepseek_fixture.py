@@ -7,13 +7,14 @@ from pathlib import Path
 
 import numpy as np
 
+from checkpoint import Checkpoint
 from deepseek_config import DeepSeekConfig, weight_shapes
 from deepseek_engram import bucket_layout
 from deepseek_quant import quantized_shapes
 from deepseek_weights import quant_layout, scale_name
 
 
-def fixture_config(quantized=True):
+def fixture_config(quantized=True, *, vision=False):
     text = {
         "model_type": "deepseek_v41_text", "hidden_act": "silu",
         "vocab_size": 96, "hidden_size": 32, "moe_intermediate_size": 32,
@@ -48,6 +49,14 @@ def fixture_config(quantized=True):
         }
     cfg = DeepSeekConfig.from_mapping(root)
     text["engram_num_embeddings"] = [int(primes.sum()) for primes in bucket_layout(cfg).values()]
+    if vision:
+        root["image_token_id"] = 94
+        root["vision_config"] = {
+            "model_type": "deepseek_v41_vision", "num_hidden_layers": 2, "hidden_size": 16,
+            "num_attention_heads": 2, "intermediate_size": 24, "patch_size": 8,
+            "rope_theta": 10000, "downsample_ratio": 2, "max_image_tokens": 12,
+            "min_pixels": 64, "max_wh_ratio": None,
+        }
     return root
 
 
@@ -90,17 +99,23 @@ def _quant_weight(rng, shape, encoding, block):
     return (code, raw), ("F8_E8M0", np.full(scales, exponent + 127, np.uint8))
 
 
-def write_fixture(path, *, quantized=True, seed=27):
+def write_fixture(path, *, quantized=True, seed=27, vision=False):
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
-    root = fixture_config(quantized)
+    root = fixture_config(quantized, vision=vision)
     cfg = DeepSeekConfig.from_mapping(root)
     (path / "config.json").write_text(json.dumps(root, indent=2) + "\n")
     tokens = [i % cfg.engram_compressed_vocab_size for i in range(cfg.vocab_size)]
     (path / "engram_token_map.json").write_text(json.dumps(tokens) + "\n")
     rng = np.random.default_rng(seed)
     shards = [{}, {}]
-    for i, (name, shape) in enumerate(weight_shapes(cfg).items()):
+    shapes = weight_shapes(cfg)
+    if vision:
+        from deepseek_vision import vision_weight_shapes
+
+        shapes.update(vision_weight_shapes(Checkpoint.open(path, metadata_only=True)))
+        write_fixture_tokenizer(path / "tokenizer.json")
+    for i, (name, shape) in enumerate(shapes.items()):
         layout = quant_layout(name) if quantized else None
         if layout:
             shards[i % 2][name], shards[(i + 1) % 2][scale_name(name)] = _quant_weight(rng, shape, *layout)
@@ -128,9 +143,11 @@ def write_fixture_tokenizer(path, *, size=96):
         "Hello,", "world!", "Blue.", "Again?", "Be", "brief.",
     ]
     tokens += [f"sample-{i}" for i in range(size - len(tokens))]
+    image_id = size - 2
+    tokens[image_id] = "<｜deepseek_image｜>"
     backend = Tokenizer(models.WordLevel(dict(zip(tokens, range(size))), unk_token="[UNK]"))
     backend.pre_tokenizer = pre_tokenizers.WhitespaceSplit()
-    backend.add_special_tokens(tokens[:9])
+    backend.add_special_tokens([*tokens[:9], tokens[image_id]])
     backend.save(str(path))
     return backend
 
@@ -141,7 +158,8 @@ if __name__ == "__main__":
     parser.add_argument("--dense", action="store_true")
     parser.add_argument("--seed", type=int, default=27)
     parser.add_argument("--with-tokenizer", action="store_true", help="Write the matching synthetic tokenizer")
+    parser.add_argument("--vision", action="store_true", help="Include a reduced vision tower and tokenizer")
     args = parser.parse_args()
-    write_fixture(args.output, quantized=not args.dense, seed=args.seed)
-    if args.with_tokenizer:
+    write_fixture(args.output, quantized=not args.dense, seed=args.seed, vision=args.vision)
+    if args.with_tokenizer and not args.vision:
         write_fixture_tokenizer(args.output / "tokenizer.json")

@@ -13,8 +13,7 @@ import numpy as np
 
 from checkpoint import Checkpoint
 from engine import Qwen3Engine, load_engine, tiny_weights
-from prompt_input import PromptTokenizer, deepseek_prompt, eos_ids, read_messages
-from third_party.deepseek_v41.encoding import parse_tagged_text
+from prompt_input import eos_ids, prepare_prompt, read_messages
 
 
 def digest(ids) -> str:
@@ -164,8 +163,12 @@ def checkpoint_identity(directory: Path) -> str:
     return f"{config_hash}/sharded-v1-{hashlib.sha256(manifest).hexdigest()}"
 
 
-def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=()):
-    logits, state = engine.prefill(prompt_ids, len(prompt_ids) + new_tokens - 1)
+def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=(), *, images=None):
+    capacity = len(prompt_ids) + new_tokens - 1
+    if images:
+        logits, state = engine.prefill(prompt_ids, capacity, images=images)
+    else:
+        logits, state = engine.prefill(prompt_ids, capacity)
     output_ids = []
     for step in range(new_tokens):
         token = int(logits.argmax())
@@ -176,46 +179,63 @@ def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=()):
     return output_ids
 
 
+def record_prompt(ids, tokenizer=None, images=None):
+    result = {"prompt_ids": ids, "prompt_sha256": digest(ids)}
+    if tokenizer is not None:
+        result["tokenizer_sha256"] = tokenizer.sha256
+    if images is not None:
+        result.update(token_types=images.token_types, images=images.metadata)
+    return result
+
+
+def _prepare_prompt_args(args, checkpoint):
+    if args.messages:
+        messages = read_messages(args.messages)
+        if not isinstance(messages, list):
+            raise ValueError("Messages must be a JSON array")
+        text, base_directory = None, args.messages.parent
+    elif args.text_file:
+        messages = None
+        text, base_directory = args.text_file.read_bytes().decode("utf-8"), args.text_file.parent
+    else:
+        messages, text, base_directory = None, args.text, Path.cwd()
+    return prepare_prompt(
+        checkpoint, text=text, messages=messages, thinking=args.thinking,
+        reasoning_effort=args.reasoning_effort, base_directory=base_directory,
+    )
+
+
 def generate(args):
     checkpoint = Checkpoint.open(args.checkpoint, metadata_only=True)
     if args.new_tokens < 1:
         raise ValueError("Use at least one output token")
 
-    ids, tokenizer, stop_ids = args.ids, None, ()
+    tokenizer, image_prompt, stop_ids = None, None, ()
+    ids = getattr(args, "ids", None)
     if ids is None:
-        text = args.text_file.read_text(encoding="utf-8") if args.text_file else args.text
-        if checkpoint.model_type == "deepseek_v41":
-            messages = read_messages(args.messages) if args.messages else [
-                {"role": "user", "content": parse_tagged_text(text)},
-            ]
-            text, images = deepseek_prompt(
-                messages, thinking=args.thinking, reasoning_effort=args.reasoning_effort,
-            )
-            if images:
-                raise ValueError("DeepSeek image generation requires a vision-capable engine")
-        elif args.messages or args.thinking or args.reasoning_effort is not None:
-            raise ValueError("Structured messages and thinking options require a DeepSeek V4.1 checkpoint")
-        tokenizer = PromptTokenizer.from_checkpoint(checkpoint)
-        ids = tokenizer.encode(text)
-        if not ids:
-            raise ValueError("Prompt must encode to at least one token")
-        image_id = checkpoint.config.get("image_token_id")
-        if image_id is not None and image_id in ids:
-            raise ValueError("Prompt image tokens require matching image content blocks")
+        ids, tokenizer, image_prompt = _prepare_prompt_args(args, checkpoint)
         stop_ids = eos_ids(checkpoint)
     elif args.thinking or args.reasoning_effort is not None:
         raise ValueError("Thinking options require text or structured messages")
 
-    engine = load_engine(args.checkpoint)
-    output_ids = greedy_ids(engine, ids, args.new_tokens, stop_ids)
+    if len(ids) + args.new_tokens - 1 > checkpoint.text_config["max_position_embeddings"]:
+        raise ValueError("Prompt and generated tokens exceed the model context limit")
+    prompt_result = record_prompt(ids, tokenizer, image_prompt)
+    if args.command == "prepare-prompt":
+        return {"model_type": checkpoint.model_type, "new_tokens": args.new_tokens, **prompt_result}
+
+    engine = load_engine(args.checkpoint, with_vision=image_prompt is not None)
+    output_ids = greedy_ids(
+        engine, ids, args.new_tokens, stop_ids,
+        images=image_prompt.images if image_prompt is not None else None,
+    )
     result = {
         "model_type": checkpoint.model_type, "device": "cpu", "dtype": "float32",
-        "prompt_ids": ids, "prompt_sha256": digest(ids),
+        **prompt_result,
         "output_ids": output_ids, "output_sha256": digest(output_ids),
     }
     if tokenizer is not None:
         result.update(
-            tokenizer_sha256=tokenizer.sha256,
             output_text=tokenizer.decode([i for i in output_ids if i not in stop_ids]),
             finish_reason="eos" if output_ids[-1] in stop_ids else "length",
         )
@@ -338,17 +358,22 @@ def parse_args(argv):
     inspection.add_argument("--checkpoint", type=Path, required=True)
     inspection.add_argument("--metadata-only", action="store_true", help="Inspect the index before downloading weight shards")
     inspection.add_argument("--output", type=Path)
-    generation = commands.add_parser("generate", help="Generate a greedy continuation with the CPU engine")
-    generation.add_argument("--checkpoint", type=Path, required=True)
-    source = generation.add_mutually_exclusive_group(required=True)
-    source.add_argument("--ids", type=int, nargs="+", help="Replay token IDs for a fixed number of steps")
-    source.add_argument("--text", help="Encode text as a DeepSeek user turn or raw Qwen3 text")
-    source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
-    source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
-    generation.add_argument("--thinking", action="store_true", help="Use DeepSeek thinking mode")
-    generation.add_argument("--reasoning-effort", type=int, metavar="1–100")
-    generation.add_argument("--new-tokens", type=int, default=16)
-    generation.add_argument("--output", type=Path)
+    for name, help_text in (
+        ("generate", "Generate a greedy continuation with the CPU engine"),
+        ("prepare-prompt", "Encode text and prepare images without loading model weights"),
+    ):
+        generation = commands.add_parser(name, help=help_text)
+        generation.add_argument("--checkpoint", type=Path, required=True)
+        source = generation.add_mutually_exclusive_group(required=True)
+        if name == "generate":
+            source.add_argument("--ids", type=int, nargs="+", help="Replay token IDs for a fixed number of steps")
+        source.add_argument("--text", help="Encode text as a DeepSeek user turn or raw Qwen3 text")
+        source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
+        source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
+        generation.add_argument("--thinking", action="store_true", help="Use DeepSeek thinking mode")
+        generation.add_argument("--reasoning-effort", type=int, metavar="1–100")
+        generation.add_argument("--new-tokens", type=int, default=16)
+        generation.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")
     comparison.add_argument("--baseline", type=Path, required=True)
     comparison.add_argument("--candidate", type=Path, required=True)
@@ -365,7 +390,7 @@ def main(argv=None) -> int:
             result = compare(args)
         elif args.command == "inspect-checkpoint":
             result = Checkpoint.open(args.checkpoint, metadata_only=args.metadata_only).describe()
-        elif args.command == "generate":
+        elif args.command in ("generate", "prepare-prompt"):
             result = generate(args)
         else:
             if args.seed < 0 or args.new_tokens < 2 or min(args.prompt_lengths) < 1:

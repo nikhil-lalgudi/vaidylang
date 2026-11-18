@@ -220,15 +220,17 @@ class Qwen3Engine:
         return joined @ weights["self_attn.o_proj.weight"].T
 
 
-def load_engine(directory):
+def load_engine(directory, *, with_vision=False):
     """Load a supported CPU engine from the root architecture in config.json."""
     checkpoint = Checkpoint.open(directory)
     if checkpoint.model_type == "qwen3":
+        if with_vision:
+            raise ValueError("Qwen3 CPU engine supports text prompts")
         return Qwen3Engine.from_checkpoint(checkpoint)
     if checkpoint.model_type == "deepseek_v41":
         from deepseek import DeepSeekEngine
 
-        return DeepSeekEngine.from_checkpoint(checkpoint)
+        return DeepSeekEngine.from_checkpoint(checkpoint, with_vision=with_vision)
     raise ValueError(f"Unsupported CPU model_type {checkpoint.model_type!r}")
 
 

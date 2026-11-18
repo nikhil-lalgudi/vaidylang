@@ -69,6 +69,26 @@ the tokenizer SHA-256, and the prompt and continuation IDs with their hashes.
 The continuation IDs include EOS when emitted. `--ids` replays a fixed number
 of steps and works with checkpoints that have no tokenizer.
 
+For an image prompt, install PyTorch and Pillow and build the reduced vision
+fixture. Use `<image>path.png</image>` in plain text or a structured
+`{"type":"image_url","image_url":{"url":"path.png"}}` block in a message.
+Both accept local paths and base64 data URLs. Files named inside a prompt
+file are resolved relative to that file.
+
+```bash
+vision_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$vision_dir" --vision
+python3 harness.py generate --checkpoint "$vision_dir" \
+  --text 'What is shown? <image>path.png</image>' --new-tokens 8
+python3 harness.py prepare-prompt --checkpoint "$vision_dir" --messages messages.json
+```
+
+`prepare-prompt` also works with just the published `config.json` and
+`tokenizer.json`. It emits expanded IDs, per-token image types, image span
+positions, grids, source hashes and BF16 patch hashes without loading weights.
+Reduced vision generation uses synthetic weights, so it tests pixel input,
+embedding replacement, routing, Engram masking and decode state.
+
 The CPU reference materializes reduced weights and uses scalar cache updates, including when verifying a block of draft tokens. The published checkpoint is available to the metadata and placement tools. CPU reproduction commands, numerical results, and pending GPU checks are in the [DeepSeek CPU reference handoff](deepseek-cpu-reference.md).
 
 ## Check the public Qwen3 checkpoint

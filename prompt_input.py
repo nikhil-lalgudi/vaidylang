@@ -80,3 +80,32 @@ def eos_ids(checkpoint):
     if any(type(i) is not int or not 0 <= i < checkpoint.text_config["vocab_size"] for i in ids):
         raise ValueError("Checkpoint has invalid EOS token IDs")
     return frozenset(ids)
+
+
+def prepare_prompt(checkpoint, *, text=None, messages=None, thinking=False,
+                   reasoning_effort=None, base_directory=None, tokenizer=None):
+    media = []
+    if checkpoint.model_type == "deepseek_v41":
+        if messages is None:
+            if not isinstance(text, str):
+                raise ValueError("Expected prompt text or structured messages")
+            messages = [{"role": "user", "content": encoding.parse_tagged_text(text)}]
+        text, media = deepseek_prompt(messages, thinking=thinking, reasoning_effort=reasoning_effort)
+    elif messages is not None or thinking or reasoning_effort is not None:
+        raise ValueError("Structured messages and thinking options require a DeepSeek V4.1 checkpoint")
+
+    tokenizer = tokenizer or PromptTokenizer.from_checkpoint(checkpoint)
+    ids = tokenizer.encode(text)
+    if not ids:
+        raise ValueError("Prompt must encode to at least one token")
+    image_prompt = None
+    if media:
+        from deepseek_vision import prepare_image_prompt
+
+        image_prompt = prepare_image_prompt(
+            checkpoint, tokenizer, ids, media, base_directory or Path.cwd(),
+        )
+        ids = image_prompt.ids
+    elif checkpoint.config.get("image_token_id") in ids:
+        raise ValueError("Prompt image tokens require matching image content blocks")
+    return ids, tokenizer, image_prompt

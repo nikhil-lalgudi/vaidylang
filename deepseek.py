@@ -40,10 +40,11 @@ class DeepSeekState:
 
 
 class DeepSeekEngine:
-    def __init__(self, config, weights, token_map=None):
+    def __init__(self, config, weights, token_map=None, vision=None):
         self.config = config
         self.weights = weights
         self.token_map = token_map
+        self.vision = vision
         if config.engram_layer_ids and token_map is None:
             raise ValueError("Engram requires a compressed token map")
         self.engram_hash = EngramHash(config, token_map) if config.engram_layer_ids else None
@@ -53,7 +54,7 @@ class DeepSeekEngine:
         self.index_sources = [cache_owner(config.index_source_layer_ids, i) for i in range(config.num_hidden_layers)]
 
     @classmethod
-    def from_checkpoint(cls, directory):
+    def from_checkpoint(cls, directory, *, with_vision=False):
         checkpoint = directory if isinstance(directory, Checkpoint) else Checkpoint.open(directory)
         config = DeepSeekConfig.from_mapping(checkpoint.config)
         file_bytes = sum(
@@ -64,7 +65,13 @@ class DeepSeekEngine:
         from deepseek_weights import read_deepseek_weights
 
         weights = read_deepseek_weights(checkpoint, config, weight_shapes(config))
-        return cls(config, weights, compressed_token_map(config, checkpoint.directory))
+        vision = None
+        if with_vision:
+            from deepseek_vision import VisionTower, vision_weight_shapes
+
+            vision_weights = read_deepseek_weights(checkpoint, config, vision_weight_shapes(checkpoint))
+            vision = VisionTower(checkpoint, vision_weights)
+        return cls(config, weights, compressed_token_map(config, checkpoint.directory), vision)
 
     def dense_weight(self, name):
         weight = self.weights[name]
@@ -96,15 +103,36 @@ class DeepSeekEngine:
             target_features=[],
         )
 
-    def prefill(self, token_ids, capacity):
+    def prefill(self, token_ids, capacity, *, images=()):
         state = self.new_state(capacity)
-        return self.forward(token_ids, state)[-1], state
+        ids = self._validated_ids(token_ids, state)
+        image_embeddings = {}
+        if images and self.vision is None:
+            raise ValueError("Load the DeepSeek engine with vision weights for image prompts")
+        end = 0
+        for image in images:
+            start = image.start
+            stop = start + image.types.numel()
+            if not end <= start < stop <= len(ids):
+                raise ValueError("Image spans must be ordered, disjoint, and inside the prompt")
+            if np.any(ids[start:stop] != self.vision.image_token_id):
+                raise ValueError("Image span positions must carry the checkpoint image token ID")
+            image_embeddings.update(enumerate(self.vision.embeddings(image), start))
+            end = stop
+        for position, token in enumerate(ids):
+            logits = self._token(int(token), state, None, image_embeddings.get(position),
+                                 project=position + 1 == len(ids))
+        return logits, state
 
     def decode(self, token_id, state):
         return self.forward([token_id], state)[-1]
 
     def forward(self, token_ids, state, trace=None):
         """Append live tokens and return one next-token logit vector per position."""
+        ids = self._validated_ids(token_ids, state)
+        return np.stack([self._token(int(token), state, trace) for token in ids])
+
+    def _validated_ids(self, token_ids, state):
         ids = np.asarray(token_ids)
         if ids.ndim != 1 or not ids.size or ids.dtype.kind not in "iu":
             raise ValueError("Expected a nonempty one-dimensional sequence of token IDs")
@@ -112,21 +140,23 @@ class DeepSeekEngine:
             raise ValueError("Token ID is outside the vocabulary")
         if ids.size > state.remaining:
             raise ValueError("KV cache capacity exceeded")
-        return np.stack([self._token(int(token), state, trace) for token in ids])
+        return ids
 
-    def _token(self, token, state, trace):
+    def _token(self, token, state, trace, image_embedding=None, *, project=True):
         c, pos = self.config, state.length
         emit = (lambda layer, op, value: trace(pos, layer, op, value)) if trace else None
-        x = np.repeat(self.weights["embed.weight"][token][None, :], c.hc_mult, axis=0)
+        is_image = image_embedding is not None
+        embedding = image_embedding if is_image else self.weights["embed.weight"][token]
+        x = np.repeat(embedding[None, :], c.hc_mult, axis=0)
         pre = np.zeros(c.hc_mult, np.float32)
         pre[0] = 1.0
         shared = {}
         features = []
         if self.engram_hash is not None:
-            state.mapped_tokens.append(int(self.token_map[token]))
+            state.mapped_tokens.append(EngramHash.DEAD if is_image else int(self.token_map[token]))
         for layer in range(c.num_hidden_layers):
             prefix = f"layers.{layer}"
-            if layer in c.engram_layer_ids:
+            if not is_image and layer in c.engram_layer_ids:
                 x = self._engram(prefix, layer, x, state, emit)
             if layer in c.dspark_target_layer_ids:
                 features.append(x.mean(axis=0))
@@ -137,16 +167,18 @@ class DeepSeekEngine:
             x = hc_post(attn, x, post, comb)
             pre, post, comb = self.hc_mixes(prefix, "ffn", x)
             sub = rms_norm(hc_pre(x, attn_pre), self.weights[prefix + ".ffn_norm.weight"], c.rms_norm_eps)
-            x = hc_post(self.moe(prefix, sub, layer, emit), x, post, comb)
+            x = hc_post(self.moe(prefix, sub, layer, emit, is_image=is_image), x, post, comb)
             if emit:
                 emit(layer, "residual", x)
         if features:
             state.target_features.append(np.concatenate(features))
-        hidden = rms_norm(hc_pre(x, pre), self.weights["norm.weight"], c.rms_norm_eps)
-        logits = self.linear("head.weight", hidden)
-        if emit:
-            emit(-1, "final_hidden", hidden)
-            emit(-1, "logits", logits)
+        logits = None
+        if project:
+            hidden = rms_norm(hc_pre(x, pre), self.weights["norm.weight"], c.rms_norm_eps)
+            logits = self.linear("head.weight", hidden)
+            if emit:
+                emit(-1, "final_hidden", hidden)
+                emit(-1, "logits", logits)
         state.length += 1
         return logits
 
@@ -160,13 +192,14 @@ class DeepSeekEngine:
             c.hc_mult, c.hc_sinkhorn_iters, c.hc_eps,
         )
 
-    def moe(self, prefix, x, layer_id, emit=None):
+    def moe(self, prefix, x, layer_id, emit=None, *, is_image=False):
         c = self.config
         prefix += ".ffn."
         logits = self.linear(prefix + "gate.weight", x) / c.gate_temperature
         _, count = c.expert_counts(layer_id)
+        bias = self.vision.weights[prefix + "gate.bias_vl"] if is_image else self.weights[prefix + "gate.bias"]
         ids, weights = route(
-            logits, self.weights[prefix + "gate.bias"], count,
+            logits, bias, count,
             c.scoring_func, c.norm_topk_prob, c.routed_scaling_factor,
         )
         y = np.zeros_like(x)
