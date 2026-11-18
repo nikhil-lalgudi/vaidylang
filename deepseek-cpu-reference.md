@@ -128,12 +128,13 @@ Engram vectors, and mark the n-gram history so text after an image starts a new
 n-gram. In the same-size image swap test, the IDs and token types match while the
 patches, prefill logits and next decode logits differ.
 
-The published checkpoint has a 970,533,624-byte vision-only shard. CPU execution
-of its 32-layer ViT and aligner produced 425 and 176 finite 5,120-wide rows for
-the upstream carrot and corn images at the published resize limit, with the
-stored BF16 weights expanded to FP32 for arithmetic. The smaller BF16 CPU check
-used a 12-token image cap and produced six finite rows per image. These runs use
-published vision weights and stop at the aligner. [Published resize, FP32](results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](results/deepseek-cpu/vision-bf16-cap12.json)
+The published checkpoint has a 970,533,624-byte vision-only shard. Its 32-layer
+ViT and aligner produced 425 and 176 finite 5,120-wide rows on CPU for the
+upstream carrot and corn images at the published resize limit, using both
+native BF16 arithmetic and weights expanded to FP32. A separate BF16 check used
+a 12-token image cap and produced six finite rows per image. These runs use
+published vision weights and stop at the aligner.
+[Published resize, BF16](results/deepseek-cpu/vision-bf16-published-resize.json) · [Published resize, FP32](results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](results/deepseek-cpu/vision-bf16-cap12.json)
 
 ```bash
 vision_dir=$(mktemp -d)
@@ -151,7 +152,8 @@ python3 -m tools.deepseek_vision_probe --checkpoint "$vision_dir" \
   --dtype float32 --output "$vision_dir/vision-report.json"
 ```
 
-Use `--image-token-cap 12` and the default BF16 dtype for the smaller check.
+Omit `--dtype float32` for native BF16. Add `--image-token-cap 12` for the
+smaller BF16 check.
 The probe verifies the config, tokenizer and shard before loading the weights.
 The reports include source image, patch and aligned-feature hashes.
 
@@ -172,12 +174,15 @@ measures the rendered prompt with the tokenizer and leaves space for
 | [Published tokenizer and image preparation](results/deepseek-cpu/prompts-frozen.json.gz) | 100 | 1,048,427 | |
 | [Reduced dense model](results/deepseek-cpu/prompts-smoke-dense.json.gz) | 100 | 512 | 800 |
 | [Reduced FP8/FP4 model](results/deepseek-cpu/prompts-smoke-quantized.json.gz) | 100 | 512 | 800 |
+| [Reduced dense model, long continuation](results/deepseek-cpu/prompt-32743-dense.json.gz) | 1 | 32,743 | 8 |
+| [Reduced FP8/FP4 model, long continuation](results/deepseek-cpu/prompt-32743-quantized.json.gz) | 1 | 32,743 | 8 |
 
 The frozen artifact records the exact prompt IDs, hashes, token budgets,
 expected answers, and expanded image spans. It contains 2,102,202 prompt
-tokens and 12 image spans. Each reduced run uses the published tokenizer and
-its real Engram map, the reduced text and vision topology, synthetic weights,
-a 512-token cap on generated documents, and an eight-token output cap. The
+tokens and 12 image spans. The reduced runs use the published tokenizer
+and its real Engram map with synthetic weights. The 100-case runs use a
+512-token cap on generated documents. The two long runs use the same
+32,743-token text prefix. All reduced runs use an eight-token output cap. The
 reports preserve every greedy ID, each evaluated prefix hash, the top five
 logits and a digest of the full logit vector. They measure execution and
 reproducibility. The manifest's expected answers are for full-checkpoint
@@ -203,13 +208,43 @@ python3 -m tools.deepseek_prompts smoke --checkpoint "$report_dir/reduced" \
 
 Use `--dense` when creating a dense fixture. Use `--case` to select a named
 case and `--document-cap` to limit the generated documents for a smaller run.
+To reproduce either 32,743-token run, create the fixture with `--context 65536`
+and omit `--vision`, then use `--case long-context-million --document-cap 32768
+--output-cap 8`.
 For frozen evidence, compare the prompt digest and token types before
 feeding the same prefix to another runtime. Compare logits on the reference
 continuation prefix even after a candidate model emits a different token.
 
+## Compare the pinned upstream CPU paths
+
+The differential checker loaded 18 pinned assets and verified their SHA-256
+digests. All five upstream prompt fixtures matched byte for byte, including
+their token IDs and media order. Both upstream JPEGs matched exactly in BF16
+patch bytes, patch grids, image types and expanded IDs. All 129,280 token
+mappings matched the upstream Engram implementation and compressed to 99,092
+entries. Primes, offsets and multipliers matched. Across six inputs, all
+95,664 hashes matched for both full-prefix and split prefill/decode against
+upstream, including masked image positions. [Differential report](results/deepseek-cpu/upstream-checks.json)
+
+```bash
+upstream_dir=$(mktemp -d)
+revision=314113f8a7dadb388215396ba5fbee2c610a04d6
+source_url="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/$revision"
+python3 -m tools.deepseek_upstream_checks --list-files | while IFS= read -r asset; do
+  mkdir -p "$upstream_dir/$(dirname "$asset")"
+  curl -fsSL "$source_url/$asset" -o "$upstream_dir/$asset" || exit 1
+done
+python3 -m tools.deepseek_upstream_checks --upstream "$upstream_dir"
+```
+
+With PyTorch 2.15.0, Tokenizers 0.22.2, Safetensors 0.7.0 and the pinned metadata,
+81 of 91 unit tests passed with ten CUDA skips. The native E8M0 sharded load and
+two-process Gloo tests both passed on CPU. The regenerated dense and quantized
+parity reports and the Qwen3 CPU archive report matched the prior reports.
+
 ## GPU validation pending
 
-- Load and execute the full pinned text checkpoint on the selected topology. Validate real tokenizer-derived Engram mapping and embeddings, the model's published text prompt encoding, actual compressed and index state, and greedy logits against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Image execution is separate.
+- Load and execute the full pinned text checkpoint on the selected topology. Validate real tokenizer-derived Engram mapping and embeddings, the model's published text prompt encoding, actual compressed and index state, and greedy logits against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Full multimodal language generation remains a GPU validation case.
 - Compare device FP8/FP4 linears and expert outputs with the CPU golden vectors, including activation scaling, saturation and ties, BF16 boundaries, compressed KV with E4M3 scales, and indexed FP4 with E8M0 scales. Establish device tolerances from measured error.
 - Run real NCCL collectives and compare single-rank and multi-rank arithmetic on reduced checkpoints before validating full-weight rank layouts. Check routed experts, vocabulary gather, group output sum, Engram padding, and index score reduction.
 - Measure peak memory during load, prefill, decoding and graph capture. Validate raw-window rollover and compressed/index-cache growth at longer contexts through the published limit on an appropriate host. Measure allocator, kernel and collective workspace beyond the modeled buffers.

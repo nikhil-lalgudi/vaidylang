@@ -1,0 +1,231 @@
+{
+  "revision": "314113f8a7dadb388215396ba5fbee2c610a04d6",
+  "source": "https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/314113f8a7dadb388215396ba5fbee2c610a04d6",
+  "device": "cpu",
+  "passed": true,
+  "asset_sha256": {
+    "config.json": "8be45ce0476004a3f529fd896115a4a2e800a129ad2d3ec05b16050f52e21879",
+    "tokenizer.json": "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b",
+    "tokenizer_config.json": "6ac8c8dc065ed118161d02dd532749ae3f52c243deac27872134fae2f50d8547",
+    "encoding/encoding.py": "13231c592e958fb39e2af6001dae69d90e7a36b265702b9b390236fb387599e2",
+    "encoding/tests/test_input_1.json": "6a5a86694e47169c8f0c9243a7e24cc5db05447be0d3d3a9891034e913c518de",
+    "encoding/tests/test_input_2.json": "fd985cda88e8640b8e2404d8e659f7006cad204eb41f73c9e6662b1f218c01aa",
+    "encoding/tests/test_input_3.json": "4207613f15c79b95ad92074bdb8b2b81c5ce9cfdf15b7a67f58ded6bb3ec4fa5",
+    "encoding/tests/test_input_4.json": "4c3890a7bc042ec6396d98d024a39a73cdcffbe1d0253e852da0c35e65296f3e",
+    "encoding/tests/test_input_5.json": "88289b0aac8d650aa55c4ffeb392818fff3a0ac83c2293ddfd90546804d5e5c4",
+    "encoding/tests/test_output_1.txt": "91f79aa955717b414a82aabfb38bcd83ab5a998bd47db89d2a26338e8d3de550",
+    "encoding/tests/test_output_2.txt": "9fa162587b73ab9b315be5c88d433f9e0e681b4b36926952f289099ed9bc1dab",
+    "encoding/tests/test_output_3.txt": "cf2b801d0738c88abb691bf4a096000c0e0737faab8a54a4ba5243c5513a3711",
+    "encoding/tests/test_output_4.txt": "94433b68370dcc69fa61efc5011b5d0e28685e4716fee1ee77fbbfc0c9935b54",
+    "encoding/tests/test_output_5.txt": "4d673091746553d1cb2e40a3fc01dc09a7c53c40627096a3e49c97a269a81f64",
+    "inference/config.json": "2e84f45cf1dac8c7fcbb200e96667d4b913275690668ed496f24c7747207a809",
+    "inference/engram.py": "11f35ecbead8150c35aa002b3d180ef290b05a25afe883a11884f94d476d3897",
+    "inference/image_processor.py": "482759e3bcc4e9bb5ee582b244cc563f5d0e163d8b48dda91ebb7106e62f9272",
+    "inference/examples/images/carrots.jpeg": "5df896a4a07e127281c60fc957f8b3d73f4735b3258a0bf762b4383557f8fa9a",
+    "inference/examples/images/corn.jpeg": "251fe7ad58f44db139a6af5ed489e027eca93ae60878b83f3e709c7d6f0112a1"
+  },
+  "integer_digest_format": "row-major little-endian signed int64",
+  "encoding": [
+    {
+      "fixture": 1,
+      "thinking_mode": "thinking",
+      "reasoning_effort": null,
+      "prompt_sha256": "91f79aa955717b414a82aabfb38bcd83ab5a998bd47db89d2a26338e8d3de550",
+      "token_ids_sha256": "4d776d59ed2f87361597e59f0a6534d21a725bc9cd7ac21a99a645e3e389b341",
+      "tokens": 548,
+      "images": 0,
+      "exact_match": true
+    },
+    {
+      "fixture": 2,
+      "thinking_mode": "chat",
+      "reasoning_effort": null,
+      "prompt_sha256": "9fa162587b73ab9b315be5c88d433f9e0e681b4b36926952f289099ed9bc1dab",
+      "token_ids_sha256": "f3f78e2543af1fbb4fdafa176e44b4d2bfb6f583b19b8b5dd8ca6675640f57d2",
+      "tokens": 40,
+      "images": 0,
+      "exact_match": true
+    },
+    {
+      "fixture": 3,
+      "thinking_mode": "chat",
+      "reasoning_effort": null,
+      "prompt_sha256": "cf2b801d0738c88abb691bf4a096000c0e0737faab8a54a4ba5243c5513a3711",
+      "token_ids_sha256": "403296346e79292f629ebd22f4ca0e7c5b7781a0455b69fbe04dc2074b850bcc",
+      "tokens": 579,
+      "images": 0,
+      "exact_match": true
+    },
+    {
+      "fixture": 4,
+      "thinking_mode": "chat",
+      "reasoning_effort": null,
+      "prompt_sha256": "94433b68370dcc69fa61efc5011b5d0e28685e4716fee1ee77fbbfc0c9935b54",
+      "token_ids_sha256": "86832ab8a8dac0074c951cb30a7ebbcc89ee65db0402b8fce153b710b1b10a13",
+      "tokens": 101,
+      "images": 0,
+      "exact_match": true
+    },
+    {
+      "fixture": 5,
+      "thinking_mode": "thinking",
+      "reasoning_effort": "max",
+      "prompt_sha256": "4d673091746553d1cb2e40a3fc01dc09a7c53c40627096a3e49c97a269a81f64",
+      "token_ids_sha256": "53754175ce66726da091f651ec0127cf8db9882151dd7d86ecb69b6ace110290",
+      "tokens": 74,
+      "images": 2,
+      "exact_match": true
+    }
+  ],
+  "image_preprocessing": {
+    "image_token_id": 129264,
+    "original_tokens": 74,
+    "expanded_tokens": 705,
+    "expanded_token_ids_sha256": "8fad9e2a83d3481cbbdad81a6ba9de444765782a676a004528727f9ff0ec7def",
+    "token_types_sha256": "ca93e6940c4f19fa048d2d145859161dcfc1641ec301785f3a5af9d2bbd77679",
+    "images": [
+      {
+        "start": 51,
+        "tokens": 444,
+        "vit_grid": [
+          51,
+          74
+        ],
+        "llm_grid": [
+          17,
+          25
+        ],
+        "source_sha256": "5df896a4a07e127281c60fc957f8b3d73f4735b3258a0bf762b4383557f8fa9a",
+        "bf16_patches_sha256": "1fea417de5d0d51806f55aeda53d48b3db2de8bf1a7068a1b9e50dfbea569c56",
+        "file": "examples/images/carrots.jpeg"
+      },
+      {
+        "start": 500,
+        "tokens": 189,
+        "vit_grid": [
+          33,
+          47
+        ],
+        "llm_grid": [
+          11,
+          16
+        ],
+        "source_sha256": "251fe7ad58f44db139a6af5ed489e027eca93ae60878b83f3e709c7d6f0112a1",
+        "bf16_patches_sha256": "dc8424742df07e5403db258c2d9f10b91d607545b3a49d20379e2309c21dad5c",
+        "file": "examples/images/corn.jpeg"
+      }
+    ],
+    "exact_match": true
+  },
+  "engram": {
+    "token_ids_checked": 129280,
+    "compressed_vocab_size": 99092,
+    "token_map_sha256": "26b9be2936d236a124ba318a998c417bc7032e3e92a3107fe98deee49f1dc496",
+    "pad_compressed_id": 2,
+    "dead_id": -1,
+    "layers": [
+      1,
+      14
+    ],
+    "table_rows": [
+      384006168,
+      384016682
+    ],
+    "primes_sha256": "ed542f58c4b3593c4120e899620231785b695dfc61bcc3d04b61b113abd9cf9e",
+    "offsets_sha256": "edf229962df441c86f9c20cbc126579dd548421e231250b146ee6f5bea0b2f8b",
+    "multipliers_sha256": "7345f44ec93e965df6581af59c78a5dd6efba7be2e855486450a6594d7ebd7c6",
+    "prefix_hash_matrices": [
+      {
+        "case": "encoding_fixture_1",
+        "shape": [
+          548,
+          2,
+          24
+        ],
+        "prefill_tokens": 545,
+        "scalar_decode_steps": 3,
+        "masked_tokens": 0,
+        "input_ids_sha256": "4d776d59ed2f87361597e59f0a6534d21a725bc9cd7ac21a99a645e3e389b341",
+        "mapped_history_sha256": "b45cc3533b5e8673efbbbfb9e3ac6209cf6154d735af98a3470706d63240c53c",
+        "hash_matrix_sha256": "687fa39c34318c4814bcb26bff8a640728fcf6b7c7275605fda88f6eb2644c18",
+        "exact_match": true
+      },
+      {
+        "case": "encoding_fixture_2",
+        "shape": [
+          40,
+          2,
+          24
+        ],
+        "prefill_tokens": 37,
+        "scalar_decode_steps": 3,
+        "masked_tokens": 0,
+        "input_ids_sha256": "f3f78e2543af1fbb4fdafa176e44b4d2bfb6f583b19b8b5dd8ca6675640f57d2",
+        "mapped_history_sha256": "4d631022dc55f632b7a3c854b78ebb80e3b36ccca392970ff6f76d7f59bf40f6",
+        "hash_matrix_sha256": "d309771ae8cbc2bb634d83a9d734e88ccc648da5d647d5e1be2997854f524bdd",
+        "exact_match": true
+      },
+      {
+        "case": "encoding_fixture_3",
+        "shape": [
+          579,
+          2,
+          24
+        ],
+        "prefill_tokens": 576,
+        "scalar_decode_steps": 3,
+        "masked_tokens": 0,
+        "input_ids_sha256": "403296346e79292f629ebd22f4ca0e7c5b7781a0455b69fbe04dc2074b850bcc",
+        "mapped_history_sha256": "8faa4fe9133bc4ada6fb6d10e1a2f4ab31ba7a800822be0a7194b2cac464b2d5",
+        "hash_matrix_sha256": "f18543aab4b4abb8c7a518825ceeb75b887989b36cea1f5daacd3dd8082778ff",
+        "exact_match": true
+      },
+      {
+        "case": "encoding_fixture_4",
+        "shape": [
+          101,
+          2,
+          24
+        ],
+        "prefill_tokens": 98,
+        "scalar_decode_steps": 3,
+        "masked_tokens": 0,
+        "input_ids_sha256": "86832ab8a8dac0074c951cb30a7ebbcc89ee65db0402b8fce153b710b1b10a13",
+        "mapped_history_sha256": "a4ea101453aeea7301fefd2b91751212854fc27ff65e50fa421c295cd92f56a5",
+        "hash_matrix_sha256": "6905f4347eb830c3aa8a6594ca430e92ff9d41550aa882e65c4dffdf0b33ab15",
+        "exact_match": true
+      },
+      {
+        "case": "encoding_fixture_5_expanded_images",
+        "shape": [
+          712,
+          2,
+          24
+        ],
+        "prefill_tokens": 705,
+        "scalar_decode_steps": 7,
+        "masked_tokens": 633,
+        "input_ids_sha256": "550284df1c0c8fa7141e216983bef1bd3bd8726815ca8fcf114c34397fc585d0",
+        "mapped_history_sha256": "26c481eba0d2a77ca5e1ca26e13bba09016df74e89230c57b7311e050a058838",
+        "hash_matrix_sha256": "2d328a93eaab408726325899b06d8b9c3cf3b6b3c7cc7c572a198f928e0a0a6a",
+        "exact_match": true
+      },
+      {
+        "case": "leading_consecutive_interior_and_trailing_dead_tokens",
+        "shape": [
+          13,
+          2,
+          24
+        ],
+        "prefill_tokens": 6,
+        "scalar_decode_steps": 7,
+        "masked_tokens": 5,
+        "input_ids_sha256": "521b4dc3fbf10673a53242a07af5861b828b536616f8d52d8485f5a912479f82",
+        "mapped_history_sha256": "322a3abae25d9deee3519269282aef3c476dd70e8b451c481884031722f6bd15",
+        "hash_matrix_sha256": "48d82682b3371912221035eb7d5f21bbbb3becb53cbed554dae669ac53633586",
+        "exact_match": true
+      }
+    ],
+    "exact_match": true
+  }
+}
