@@ -74,6 +74,8 @@ class CheckpointTests(unittest.TestCase):
     def test_native_quantized_storage_loads_from_both_deepseek_shards(self):
         import torch
 
+        if not hasattr(torch, "float8_e8m0fnu"):
+            self.skipTest("requires a PyTorch build with native float8_e8m0fnu")
         write_checkpoint_weights(self.path / SHARD_1, {EXPERT: ("I8", np.array([-113, 81], dtype="i1"))})
         write_checkpoint_weights(self.path / SHARD_2, {SCALE: ("F8_E8M0", np.array([127, 128], dtype="u1"))})
         checkpoint = Checkpoint.open(self.path)

@@ -1,0 +1,3346 @@
+{
+  "device": "cpu",
+  "numpy": "2.4.4",
+  "atol": 3e-05,
+  "rtol": 2e-05,
+  "prompt_ids": [
+    2,
+    11,
+    3,
+    7,
+    9
+  ],
+  "prompt_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+  "output_ids": [
+    76,
+    69,
+    77,
+    75,
+    95,
+    71,
+    94,
+    53,
+    55,
+    74,
+    86,
+    21,
+    15,
+    33,
+    68,
+    53
+  ],
+  "output_sha256": "3fcde36b52a65b3528a3ab122c6fbafad6027a608ed69e7b2327ff8f52bc9dfa",
+  "paths": {
+    "full_prefix": {
+      "arithmetic_path": "FP32 full-prefix versus scalar target",
+      "rows": [
+        {
+          "step": 0,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9
+          ],
+          "prefix_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 76,
+          "reference_id": 76,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.160919189453125,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.160919189453125,
+            "rank": 1
+          },
+          "reference_top_margin": 0.060593605041503906,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 1,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76
+          ],
+          "prefix_sha256": "8222451e55ed65fe9623a557ec575cb76662acebc75996adc4483a6d108c23bf",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 69,
+          "reference_id": 69,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.4127626419067383,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.4127626419067383,
+            "rank": 1
+          },
+          "reference_top_margin": 0.5796489715576172,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 2,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69
+          ],
+          "prefix_sha256": "c8aa3d492ed176d6c9d76f4cc0629ad5d71a22bf1b5d9e48d791c6c51e34ec19",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 77,
+          "reference_id": 77,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.094477653503418,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.094477653503418,
+            "rank": 1
+          },
+          "reference_top_margin": 0.2684440612792969,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 3,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77
+          ],
+          "prefix_sha256": "5d5a74730d894e194b661c3e30649ef4a872d42bedfc5d5eb9bd9f11d1b5ddd4",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 75,
+          "reference_id": 75,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.1078453063964844,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.1078453063964844,
+            "rank": 1
+          },
+          "reference_top_margin": 0.13324689865112305,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 4,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75
+          ],
+          "prefix_sha256": "0f04aacf5d8becb9f4dde37e3454a5befdf59f25ee2465ee03ebde59deee5871",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 95,
+          "reference_id": 95,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.9455310106277466,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.9455310106277466,
+            "rank": 1
+          },
+          "reference_top_margin": 0.39574217796325684,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 5,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95
+          ],
+          "prefix_sha256": "ce39041f970430a0406a9696d8a233d84c666aa16812eb6346f5e63109a1c53c",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 71,
+          "reference_id": 71,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.6911606788635254,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.6911606788635254,
+            "rank": 1
+          },
+          "reference_top_margin": 0.13476967811584473,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 6,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71
+          ],
+          "prefix_sha256": "74dbd11065bc5b9f524b9666191311845b11c75b539ce55e0907bcb204c24769",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 94,
+          "reference_id": 94,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.4613831043243408,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.4613831043243408,
+            "rank": 1
+          },
+          "reference_top_margin": 0.14459598064422607,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 7,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94
+          ],
+          "prefix_sha256": "b3789848faea09c09616a24c79a5a07b1c8f7d1a867dc5133bbe5aa38178f8e1",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 53,
+          "reference_id": 53,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.9613127708435059,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.9613127708435059,
+            "rank": 1
+          },
+          "reference_top_margin": 0.004001617431640625,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 8,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53
+          ],
+          "prefix_sha256": "9eb6597537e62247c2e0420cbe89a3adf3710ff3ccfec71dcb8163942f997f86",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 55,
+          "reference_id": 55,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.625368595123291,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.625368595123291,
+            "rank": 1
+          },
+          "reference_top_margin": 1.00892174243927,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 9,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55
+          ],
+          "prefix_sha256": "7d8c34342a990da189ec5228e9166534ff3b457e078fe3d6e660b391e3636925",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 74,
+          "reference_id": 74,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.673257827758789,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.673257827758789,
+            "rank": 1
+          },
+          "reference_top_margin": 0.08226537704467773,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 10,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74
+          ],
+          "prefix_sha256": "b49ae9c7c3b9788591642dc315317fe30d950229588bca1b83bfef17c9e6540c",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 86,
+          "reference_id": 86,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.7044938802719116,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.7044938802719116,
+            "rank": 1
+          },
+          "reference_top_margin": 0.22495079040527344,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 11,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86
+          ],
+          "prefix_sha256": "d039808356fae0e46fded1f49aa6520c58a06f6ed250496041591901f3735c85",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 21,
+          "reference_id": 21,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.647132158279419,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.647132158279419,
+            "rank": 1
+          },
+          "reference_top_margin": 0.1543346643447876,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 12,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21
+          ],
+          "prefix_sha256": "03bc1a59f4ae8f8bc9e1cc89328a8f4adf0b29aa0ae37f9a9fe82ed6314878f4",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 15,
+          "reference_id": 15,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.750847339630127,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.750847339630127,
+            "rank": 1
+          },
+          "reference_top_margin": 0.15700829029083252,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 13,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15
+          ],
+          "prefix_sha256": "c406281ffeda961ffb089136d1ef1293812538935058caeb4200b24b2fdbfbd8",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 33,
+          "reference_id": 33,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.715177059173584,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.715177059173584,
+            "rank": 1
+          },
+          "reference_top_margin": 0.0530703067779541,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 14,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15,
+            33
+          ],
+          "prefix_sha256": "371a4f613cb8de5008883a3bcc8eb79cac9cf317bf8dd8480dc60d0d128ab7f5",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 68,
+          "reference_id": 68,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 1.7715541124343872,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.7715541124343872,
+            "rank": 1
+          },
+          "reference_top_margin": 0.003756284713745117,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 15,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15,
+            33,
+            68
+          ],
+          "prefix_sha256": "b15d3ce8588a777920b9f31dd725e45cc731795208a3708ca65580a934a0de18",
+          "actual_dtype": "float32",
+          "reference_dtype": "float32",
+          "actual_id": 53,
+          "reference_id": 53,
+          "exact_choice_match": true,
+          "exact_logits_match": true,
+          "actual_id_in_reference": {
+            "logit": 2.1127724647521973,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.1127724647521973,
+            "rank": 1
+          },
+          "reference_top_margin": 0.23357534408569336,
+          "max_abs_error": 0.0,
+          "max_abs_error_token_id": 0,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        }
+      ]
+    },
+    "blocks": [
+      {
+        "block_size": 2,
+        "arithmetic_path": "FP32 staged verifier versus scalar target on identical prefixes",
+        "masked_padding_slots": 1,
+        "rollback_verified": true,
+        "rows": [
+          {
+            "step": 0,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9
+            ],
+            "prefix_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 76,
+            "reference_id": 76,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_top_margin": 0.060593605041503906,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 1,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76
+            ],
+            "prefix_sha256": "8222451e55ed65fe9623a557ec575cb76662acebc75996adc4483a6d108c23bf",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 69,
+            "reference_id": 69,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_top_margin": 0.5796489715576172,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 2,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69
+            ],
+            "prefix_sha256": "c8aa3d492ed176d6c9d76f4cc0629ad5d71a22bf1b5d9e48d791c6c51e34ec19",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 77,
+            "reference_id": 77,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_top_margin": 0.2684440612792969,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 3,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77
+            ],
+            "prefix_sha256": "5d5a74730d894e194b661c3e30649ef4a872d42bedfc5d5eb9bd9f11d1b5ddd4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 75,
+            "reference_id": 75,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13324689865112305,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 4,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75
+            ],
+            "prefix_sha256": "0f04aacf5d8becb9f4dde37e3454a5befdf59f25ee2465ee03ebde59deee5871",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 95,
+            "reference_id": 95,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_top_margin": 0.39574217796325684,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 5,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95
+            ],
+            "prefix_sha256": "ce39041f970430a0406a9696d8a233d84c666aa16812eb6346f5e63109a1c53c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 71,
+            "reference_id": 71,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13476967811584473,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 6,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71
+            ],
+            "prefix_sha256": "74dbd11065bc5b9f524b9666191311845b11c75b539ce55e0907bcb204c24769",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 94,
+            "reference_id": 94,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_top_margin": 0.14459598064422607,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 7,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94
+            ],
+            "prefix_sha256": "b3789848faea09c09616a24c79a5a07b1c8f7d1a867dc5133bbe5aa38178f8e1",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_top_margin": 0.004001617431640625,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 8,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53
+            ],
+            "prefix_sha256": "9eb6597537e62247c2e0420cbe89a3adf3710ff3ccfec71dcb8163942f997f86",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 55,
+            "reference_id": 55,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_top_margin": 1.00892174243927,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 9,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55
+            ],
+            "prefix_sha256": "7d8c34342a990da189ec5228e9166534ff3b457e078fe3d6e660b391e3636925",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 74,
+            "reference_id": 74,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_top_margin": 0.08226537704467773,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 10,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74
+            ],
+            "prefix_sha256": "b49ae9c7c3b9788591642dc315317fe30d950229588bca1b83bfef17c9e6540c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 86,
+            "reference_id": 86,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_top_margin": 0.22495079040527344,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 11,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86
+            ],
+            "prefix_sha256": "d039808356fae0e46fded1f49aa6520c58a06f6ed250496041591901f3735c85",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 21,
+            "reference_id": 21,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_top_margin": 0.1543346643447876,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 12,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21
+            ],
+            "prefix_sha256": "03bc1a59f4ae8f8bc9e1cc89328a8f4adf0b29aa0ae37f9a9fe82ed6314878f4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 15,
+            "reference_id": 15,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_top_margin": 0.15700829029083252,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 13,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15
+            ],
+            "prefix_sha256": "c406281ffeda961ffb089136d1ef1293812538935058caeb4200b24b2fdbfbd8",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 33,
+            "reference_id": 33,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_top_margin": 0.0530703067779541,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 14,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33
+            ],
+            "prefix_sha256": "371a4f613cb8de5008883a3bcc8eb79cac9cf317bf8dd8480dc60d0d128ab7f5",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 68,
+            "reference_id": 68,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_top_margin": 0.003756284713745117,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 15,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33,
+              68
+            ],
+            "prefix_sha256": "b15d3ce8588a777920b9f31dd725e45cc731795208a3708ca65580a934a0de18",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_top_margin": 0.23357534408569336,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          }
+        ],
+        "first_logit_mismatch": null
+      },
+      {
+        "block_size": 4,
+        "arithmetic_path": "FP32 staged verifier versus scalar target on identical prefixes",
+        "masked_padding_slots": 1,
+        "rollback_verified": true,
+        "rows": [
+          {
+            "step": 0,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9
+            ],
+            "prefix_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 76,
+            "reference_id": 76,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_top_margin": 0.060593605041503906,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 1,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76
+            ],
+            "prefix_sha256": "8222451e55ed65fe9623a557ec575cb76662acebc75996adc4483a6d108c23bf",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 69,
+            "reference_id": 69,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_top_margin": 0.5796489715576172,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 2,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69
+            ],
+            "prefix_sha256": "c8aa3d492ed176d6c9d76f4cc0629ad5d71a22bf1b5d9e48d791c6c51e34ec19",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 77,
+            "reference_id": 77,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_top_margin": 0.2684440612792969,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 3,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77
+            ],
+            "prefix_sha256": "5d5a74730d894e194b661c3e30649ef4a872d42bedfc5d5eb9bd9f11d1b5ddd4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 75,
+            "reference_id": 75,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13324689865112305,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 4,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75
+            ],
+            "prefix_sha256": "0f04aacf5d8becb9f4dde37e3454a5befdf59f25ee2465ee03ebde59deee5871",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 95,
+            "reference_id": 95,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_top_margin": 0.39574217796325684,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 5,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95
+            ],
+            "prefix_sha256": "ce39041f970430a0406a9696d8a233d84c666aa16812eb6346f5e63109a1c53c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 71,
+            "reference_id": 71,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13476967811584473,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 6,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71
+            ],
+            "prefix_sha256": "74dbd11065bc5b9f524b9666191311845b11c75b539ce55e0907bcb204c24769",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 94,
+            "reference_id": 94,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_top_margin": 0.14459598064422607,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 7,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94
+            ],
+            "prefix_sha256": "b3789848faea09c09616a24c79a5a07b1c8f7d1a867dc5133bbe5aa38178f8e1",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_top_margin": 0.004001617431640625,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 8,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53
+            ],
+            "prefix_sha256": "9eb6597537e62247c2e0420cbe89a3adf3710ff3ccfec71dcb8163942f997f86",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 55,
+            "reference_id": 55,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_top_margin": 1.00892174243927,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 9,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55
+            ],
+            "prefix_sha256": "7d8c34342a990da189ec5228e9166534ff3b457e078fe3d6e660b391e3636925",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 74,
+            "reference_id": 74,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_top_margin": 0.08226537704467773,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 10,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74
+            ],
+            "prefix_sha256": "b49ae9c7c3b9788591642dc315317fe30d950229588bca1b83bfef17c9e6540c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 86,
+            "reference_id": 86,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_top_margin": 0.22495079040527344,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 11,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86
+            ],
+            "prefix_sha256": "d039808356fae0e46fded1f49aa6520c58a06f6ed250496041591901f3735c85",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 21,
+            "reference_id": 21,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_top_margin": 0.1543346643447876,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 12,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21
+            ],
+            "prefix_sha256": "03bc1a59f4ae8f8bc9e1cc89328a8f4adf0b29aa0ae37f9a9fe82ed6314878f4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 15,
+            "reference_id": 15,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_top_margin": 0.15700829029083252,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 13,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15
+            ],
+            "prefix_sha256": "c406281ffeda961ffb089136d1ef1293812538935058caeb4200b24b2fdbfbd8",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 33,
+            "reference_id": 33,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_top_margin": 0.0530703067779541,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 14,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33
+            ],
+            "prefix_sha256": "371a4f613cb8de5008883a3bcc8eb79cac9cf317bf8dd8480dc60d0d128ab7f5",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 68,
+            "reference_id": 68,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_top_margin": 0.003756284713745117,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 15,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33,
+              68
+            ],
+            "prefix_sha256": "b15d3ce8588a777920b9f31dd725e45cc731795208a3708ca65580a934a0de18",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_top_margin": 0.23357534408569336,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          }
+        ],
+        "first_logit_mismatch": null
+      },
+      {
+        "block_size": 8,
+        "arithmetic_path": "FP32 staged verifier versus scalar target on identical prefixes",
+        "masked_padding_slots": 1,
+        "rollback_verified": true,
+        "rows": [
+          {
+            "step": 0,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9
+            ],
+            "prefix_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 76,
+            "reference_id": 76,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.160919189453125,
+              "rank": 1
+            },
+            "reference_top_margin": 0.060593605041503906,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 1,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76
+            ],
+            "prefix_sha256": "8222451e55ed65fe9623a557ec575cb76662acebc75996adc4483a6d108c23bf",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 69,
+            "reference_id": 69,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.4127626419067383,
+              "rank": 1
+            },
+            "reference_top_margin": 0.5796489715576172,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 2,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69
+            ],
+            "prefix_sha256": "c8aa3d492ed176d6c9d76f4cc0629ad5d71a22bf1b5d9e48d791c6c51e34ec19",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 77,
+            "reference_id": 77,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.094477653503418,
+              "rank": 1
+            },
+            "reference_top_margin": 0.2684440612792969,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 3,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77
+            ],
+            "prefix_sha256": "5d5a74730d894e194b661c3e30649ef4a872d42bedfc5d5eb9bd9f11d1b5ddd4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 75,
+            "reference_id": 75,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1078453063964844,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13324689865112305,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 4,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75
+            ],
+            "prefix_sha256": "0f04aacf5d8becb9f4dde37e3454a5befdf59f25ee2465ee03ebde59deee5871",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 95,
+            "reference_id": 95,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9455310106277466,
+              "rank": 1
+            },
+            "reference_top_margin": 0.39574217796325684,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 5,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95
+            ],
+            "prefix_sha256": "ce39041f970430a0406a9696d8a233d84c666aa16812eb6346f5e63109a1c53c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 71,
+            "reference_id": 71,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.6911606788635254,
+              "rank": 1
+            },
+            "reference_top_margin": 0.13476967811584473,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 6,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71
+            ],
+            "prefix_sha256": "74dbd11065bc5b9f524b9666191311845b11c75b539ce55e0907bcb204c24769",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 94,
+            "reference_id": 94,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.4613831043243408,
+              "rank": 1
+            },
+            "reference_top_margin": 0.14459598064422607,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 7,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94
+            ],
+            "prefix_sha256": "b3789848faea09c09616a24c79a5a07b1c8f7d1a867dc5133bbe5aa38178f8e1",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.9613127708435059,
+              "rank": 1
+            },
+            "reference_top_margin": 0.004001617431640625,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 8,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53
+            ],
+            "prefix_sha256": "9eb6597537e62247c2e0420cbe89a3adf3710ff3ccfec71dcb8163942f997f86",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 55,
+            "reference_id": 55,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.625368595123291,
+              "rank": 1
+            },
+            "reference_top_margin": 1.00892174243927,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 9,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55
+            ],
+            "prefix_sha256": "7d8c34342a990da189ec5228e9166534ff3b457e078fe3d6e660b391e3636925",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 74,
+            "reference_id": 74,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.673257827758789,
+              "rank": 1
+            },
+            "reference_top_margin": 0.08226537704467773,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 10,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74
+            ],
+            "prefix_sha256": "b49ae9c7c3b9788591642dc315317fe30d950229588bca1b83bfef17c9e6540c",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 86,
+            "reference_id": 86,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7044938802719116,
+              "rank": 1
+            },
+            "reference_top_margin": 0.22495079040527344,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 11,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86
+            ],
+            "prefix_sha256": "d039808356fae0e46fded1f49aa6520c58a06f6ed250496041591901f3735c85",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 21,
+            "reference_id": 21,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.647132158279419,
+              "rank": 1
+            },
+            "reference_top_margin": 0.1543346643447876,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 12,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21
+            ],
+            "prefix_sha256": "03bc1a59f4ae8f8bc9e1cc89328a8f4adf0b29aa0ae37f9a9fe82ed6314878f4",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 15,
+            "reference_id": 15,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.750847339630127,
+              "rank": 1
+            },
+            "reference_top_margin": 0.15700829029083252,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 13,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15
+            ],
+            "prefix_sha256": "c406281ffeda961ffb089136d1ef1293812538935058caeb4200b24b2fdbfbd8",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 33,
+            "reference_id": 33,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.715177059173584,
+              "rank": 1
+            },
+            "reference_top_margin": 0.0530703067779541,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 14,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33
+            ],
+            "prefix_sha256": "371a4f613cb8de5008883a3bcc8eb79cac9cf317bf8dd8480dc60d0d128ab7f5",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 68,
+            "reference_id": 68,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 1.7715541124343872,
+              "rank": 1
+            },
+            "reference_top_margin": 0.003756284713745117,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          },
+          {
+            "step": 15,
+            "prefix_ids": [
+              2,
+              11,
+              3,
+              7,
+              9,
+              76,
+              69,
+              77,
+              75,
+              95,
+              71,
+              94,
+              53,
+              55,
+              74,
+              86,
+              21,
+              15,
+              33,
+              68
+            ],
+            "prefix_sha256": "b15d3ce8588a777920b9f31dd725e45cc731795208a3708ca65580a934a0de18",
+            "actual_dtype": "float32",
+            "reference_dtype": "float32",
+            "actual_id": 53,
+            "reference_id": 53,
+            "exact_choice_match": true,
+            "exact_logits_match": true,
+            "actual_id_in_reference": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_id_in_actual": {
+              "logit": 2.1127724647521973,
+              "rank": 1
+            },
+            "reference_top_margin": 0.23357534408569336,
+            "max_abs_error": 0.0,
+            "max_abs_error_token_id": 0,
+            "violation_count": 0,
+            "max_excess_over_tolerance": 0.0,
+            "max_excess_token_id": null,
+            "actual_id_attains_reference_maximum": true,
+            "passed": true
+          }
+        ],
+        "first_logit_mismatch": null
+      }
+    ],
+    "independent_oracle": {
+      "arithmetic_path": "FP32 cached target versus independent FP64 cache-free dense oracle",
+      "rows": [
+        {
+          "step": 0,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9
+          ],
+          "prefix_sha256": "3b7dd4c3f322f7eee15a6dcb819fd5f74b80a1b3dde3eb053b94e11036a03d14",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 76,
+          "reference_id": 76,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.160918933007836,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.160919189453125,
+            "rank": 1
+          },
+          "reference_top_margin": 0.06059326793463926,
+          "max_abs_error": 7.511291696543632e-07,
+          "max_abs_error_token_id": 4,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 1,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76
+          ],
+          "prefix_sha256": "8222451e55ed65fe9623a557ec575cb76662acebc75996adc4483a6d108c23bf",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 69,
+          "reference_id": 69,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.412763252908295,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.4127626419067383,
+            "rank": 1
+          },
+          "reference_top_margin": 0.5796498163147952,
+          "max_abs_error": 7.473259666657128e-07,
+          "max_abs_error_token_id": 12,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 2,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69
+          ],
+          "prefix_sha256": "c8aa3d492ed176d6c9d76f4cc0629ad5d71a22bf1b5d9e48d791c6c51e34ec19",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 77,
+          "reference_id": 77,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.0944768696279117,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.094477653503418,
+            "rank": 1
+          },
+          "reference_top_margin": 0.268443278708677,
+          "max_abs_error": 1.428731067676381e-06,
+          "max_abs_error_token_id": 22,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 3,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77
+          ],
+          "prefix_sha256": "5d5a74730d894e194b661c3e30649ef4a872d42bedfc5d5eb9bd9f11d1b5ddd4",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 75,
+          "reference_id": 75,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.1078454989437407,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.1078453063964844,
+            "rank": 1
+          },
+          "reference_top_margin": 0.13324715217845262,
+          "max_abs_error": 4.913618059099178e-07,
+          "max_abs_error_token_id": 53,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 4,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75
+          ],
+          "prefix_sha256": "0f04aacf5d8becb9f4dde37e3454a5befdf59f25ee2465ee03ebde59deee5871",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 95,
+          "reference_id": 95,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.9455312419861284,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.9455310106277466,
+            "rank": 1
+          },
+          "reference_top_margin": 0.39574266857326523,
+          "max_abs_error": 5.882124290979007e-07,
+          "max_abs_error_token_id": 24,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 5,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95
+          ],
+          "prefix_sha256": "ce39041f970430a0406a9696d8a233d84c666aa16812eb6346f5e63109a1c53c",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 71,
+          "reference_id": 71,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.691160324683036,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.6911606788635254,
+            "rank": 1
+          },
+          "reference_top_margin": 0.13476973074364573,
+          "max_abs_error": 5.590634444274656e-07,
+          "max_abs_error_token_id": 47,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 6,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71
+          ],
+          "prefix_sha256": "74dbd11065bc5b9f524b9666191311845b11c75b539ce55e0907bcb204c24769",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 94,
+          "reference_id": 94,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.461383228617066,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.4613831043243408,
+            "rank": 1
+          },
+          "reference_top_margin": 0.14459588811455903,
+          "max_abs_error": 7.001118402794049e-07,
+          "max_abs_error_token_id": 21,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 7,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94
+          ],
+          "prefix_sha256": "b3789848faea09c09616a24c79a5a07b1c8f7d1a867dc5133bbe5aa38178f8e1",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 53,
+          "reference_id": 53,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.9613127034472115,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.9613127708435059,
+            "rank": 1
+          },
+          "reference_top_margin": 0.004001462713725035,
+          "max_abs_error": 6.498377655983489e-07,
+          "max_abs_error_token_id": 65,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 8,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53
+          ],
+          "prefix_sha256": "9eb6597537e62247c2e0420cbe89a3adf3710ff3ccfec71dcb8163942f997f86",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 55,
+          "reference_id": 55,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.625368712667941,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.625368595123291,
+            "rank": 1
+          },
+          "reference_top_margin": 1.0089217103930475,
+          "max_abs_error": 6.053797890759327e-07,
+          "max_abs_error_token_id": 28,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 9,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55
+          ],
+          "prefix_sha256": "7d8c34342a990da189ec5228e9166534ff3b457e078fe3d6e660b391e3636925",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 74,
+          "reference_id": 74,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.6732573540421412,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.673257827758789,
+            "rank": 1
+          },
+          "reference_top_margin": 0.08226515091414854,
+          "max_abs_error": 5.905791966576146e-07,
+          "max_abs_error_token_id": 2,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 10,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74
+          ],
+          "prefix_sha256": "b49ae9c7c3b9788591642dc315317fe30d950229588bca1b83bfef17c9e6540c",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 86,
+          "reference_id": 86,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.7044935868018447,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.7044938802719116,
+            "rank": 1
+          },
+          "reference_top_margin": 0.2249505814545849,
+          "max_abs_error": 9.687996314067249e-07,
+          "max_abs_error_token_id": 80,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 11,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86
+          ],
+          "prefix_sha256": "d039808356fae0e46fded1f49aa6520c58a06f6ed250496041591901f3735c85",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 21,
+          "reference_id": 21,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.6471319979967254,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.647132158279419,
+            "rank": 1
+          },
+          "reference_top_margin": 0.1543341010861765,
+          "max_abs_error": 8.294719988644061e-07,
+          "max_abs_error_token_id": 22,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 12,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21
+          ],
+          "prefix_sha256": "03bc1a59f4ae8f8bc9e1cc89328a8f4adf0b29aa0ae37f9a9fe82ed6314878f4",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 15,
+          "reference_id": 15,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.7508476122079337,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.750847339630127,
+            "rank": 1
+          },
+          "reference_top_margin": 0.15700905258909414,
+          "max_abs_error": 9.551213518421697e-07,
+          "max_abs_error_token_id": 56,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 13,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15
+          ],
+          "prefix_sha256": "c406281ffeda961ffb089136d1ef1293812538935058caeb4200b24b2fdbfbd8",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 33,
+          "reference_id": 33,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.7151772070091154,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.715177059173584,
+            "rank": 1
+          },
+          "reference_top_margin": 0.053070330118338616,
+          "max_abs_error": 6.053904118563658e-07,
+          "max_abs_error_token_id": 28,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 14,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15,
+            33
+          ],
+          "prefix_sha256": "371a4f613cb8de5008883a3bcc8eb79cac9cf317bf8dd8480dc60d0d128ab7f5",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 68,
+          "reference_id": 68,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 1.7715539052694769,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 1.7715541124343872,
+            "rank": 1
+          },
+          "reference_top_margin": 0.0037561940755515,
+          "max_abs_error": 5.935202092022251e-07,
+          "max_abs_error_token_id": 15,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        },
+        {
+          "step": 15,
+          "prefix_ids": [
+            2,
+            11,
+            3,
+            7,
+            9,
+            76,
+            69,
+            77,
+            75,
+            95,
+            71,
+            94,
+            53,
+            55,
+            74,
+            86,
+            21,
+            15,
+            33,
+            68
+          ],
+          "prefix_sha256": "b15d3ce8588a777920b9f31dd725e45cc731795208a3708ca65580a934a0de18",
+          "actual_dtype": "float32",
+          "reference_dtype": "float64",
+          "actual_id": 53,
+          "reference_id": 53,
+          "exact_choice_match": true,
+          "exact_logits_match": false,
+          "actual_id_in_reference": {
+            "logit": 2.1127721683051712,
+            "rank": 1
+          },
+          "reference_id_in_actual": {
+            "logit": 2.1127724647521973,
+            "rank": 1
+          },
+          "reference_top_margin": 0.23357505432229742,
+          "max_abs_error": 5.707731755566492e-07,
+          "max_abs_error_token_id": 39,
+          "violation_count": 0,
+          "max_excess_over_tolerance": 0.0,
+          "max_excess_token_id": null,
+          "actual_id_attains_reference_maximum": true,
+          "passed": true
+        }
+      ]
+    }
+  },
+  "strict_frozen_sequence": {
+    "frozen_output_ids": [
+      76,
+      69,
+      77,
+      75,
+      95,
+      71,
+      94,
+      53,
+      55,
+      74,
+      86,
+      21,
+      15,
+      33,
+      68,
+      53
+    ],
+    "frozen_output_sha256": "3fcde36b52a65b3528a3ab122c6fbafad6027a608ed69e7b2327ff8f52bc9dfa",
+    "first_mismatch": null,
+    "passed": true
+  },
+  "first_differences": {
+    "full_prefix_vs_scalar": null,
+    "verifier_block_2_vs_scalar": null,
+    "verifier_block_4_vs_scalar": null,
+    "verifier_block_8_vs_scalar": null,
+    "scalar_vs_independent_oracle": null
+  },
+  "passed": true,
+  "checkpoint": "reduced-dense-default"
+}

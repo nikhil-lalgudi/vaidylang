@@ -12,7 +12,7 @@ from time import perf_counter_ns
 import numpy as np
 
 from checkpoint import Checkpoint
-from engine import Qwen3Engine, tiny_weights
+from engine import Qwen3Engine, load_engine, tiny_weights
 
 
 def digest(ids) -> str:
@@ -142,11 +142,41 @@ def percentiles(values) -> dict:
 
 
 def checkpoint_identity(directory: Path) -> str:
-    with (directory / "config.json").open("rb") as config:
-        config_hash = hashlib.file_digest(config, "sha256").hexdigest()
-    with (directory / "model.safetensors").open("rb") as weights:
-        weight_hash = hashlib.file_digest(weights, "sha256").hexdigest()
-    return f"{config_hash}/{weight_hash}"
+    def file_hash(path):
+        with path.open("rb") as stream:
+            return hashlib.file_digest(stream, "sha256").hexdigest()
+
+    config_hash = file_hash(directory / "config.json")
+    if (directory / "model.safetensors").is_file():
+        return f"{config_hash}/{file_hash(directory / 'model.safetensors')}"
+    checkpoint = Checkpoint.open(directory)
+    index = "model.safetensors.index.json"
+    files = [(shard, file_hash(directory / shard)) for shard in (index, *checkpoint.shards)]
+    # The Engram sidecar changes token interpretation even with identical weights.
+    sidecar = "engram_token_map.json"
+    tokenizer = "tokenizer.json"
+    if checkpoint.model_type == "deepseek_v41" and checkpoint.text_config.get("engram_layer_ids"):
+        sidecar = sidecar if (directory / sidecar).is_file() else tokenizer
+        files.append((sidecar, file_hash(directory / sidecar)))
+    manifest = json.dumps(files, separators=(",", ":")).encode()
+    return f"{config_hash}/sharded-v1-{hashlib.sha256(manifest).hexdigest()}"
+
+
+def generate(args):
+    checkpoint = Checkpoint.open(args.checkpoint, metadata_only=True)
+    if args.new_tokens < 1:
+        raise ValueError("Use at least one output token")
+    engine = load_engine(args.checkpoint)
+    logits, state = engine.prefill(args.ids, len(args.ids) + args.new_tokens - 1)
+    output_ids = [int(logits.argmax())]
+    for _ in range(args.new_tokens - 1):
+        logits = engine.decode(output_ids[-1], state)
+        output_ids.append(int(logits.argmax()))
+    return {
+        "model_type": checkpoint.model_type, "device": "cpu", "dtype": "float32",
+        "prompt_ids": args.ids, "prompt_sha256": digest(args.ids),
+        "output_ids": output_ids, "output_sha256": digest(output_ids),
+    }
 
 
 def summarize_case(ids, new_tokens, samples) -> dict:
@@ -234,7 +264,7 @@ def parse_args(argv):
         command = commands.add_parser(name)
         model = command.add_mutually_exclusive_group(required=True)
         model.add_argument("--tiny", action="store_true", help="Use a deterministic synthetic checkpoint")
-        model.add_argument("--checkpoint", type=Path, help="Directory containing config.json and model.safetensors")
+        model.add_argument("--checkpoint", type=Path, help="Directory containing model config and Safetensors weights")
         command.add_argument("--prompt-lengths", nargs="+", type=int, default=[8, 32])
         command.add_argument("--new-tokens", type=int, default=8)
         command.add_argument("--seed", type=int, default=123)
@@ -265,6 +295,11 @@ def parse_args(argv):
     inspection.add_argument("--checkpoint", type=Path, required=True)
     inspection.add_argument("--metadata-only", action="store_true", help="Inspect the index before downloading weight shards")
     inspection.add_argument("--output", type=Path)
+    generation = commands.add_parser("generate", help="Generate greedy token IDs with the CPU engine")
+    generation.add_argument("--checkpoint", type=Path, required=True)
+    generation.add_argument("--ids", type=int, nargs="+", required=True)
+    generation.add_argument("--new-tokens", type=int, default=16)
+    generation.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")
     comparison.add_argument("--baseline", type=Path, required=True)
     comparison.add_argument("--candidate", type=Path, required=True)
@@ -281,6 +316,8 @@ def main(argv=None) -> int:
             result = compare(args)
         elif args.command == "inspect-checkpoint":
             result = Checkpoint.open(args.checkpoint, metadata_only=args.metadata_only).describe()
+        elif args.command == "generate":
+            result = generate(args)
         else:
             if args.seed < 0 or args.new_tokens < 2 or min(args.prompt_lengths) < 1:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")
@@ -315,7 +352,7 @@ def main(argv=None) -> int:
                     or args.fused_decode_pointwise or args.tiled_decode
                 ):
                     raise ValueError("CUDA verification options require --cuda")
-                engine = Qwen3Engine(*tiny_weights()) if args.tiny else Qwen3Engine.from_checkpoint(args.checkpoint)
+                engine = Qwen3Engine(*tiny_weights()) if args.tiny else load_engine(args.checkpoint)
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:
                 raise ValueError("Prompt and generated tokens exceed the model context limit")
             result = verify(args, engine) if args.command == "verify" else benchmark(args, engine)

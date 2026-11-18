@@ -143,7 +143,7 @@ class Qwen3Engine:
 
     @classmethod
     def from_checkpoint(cls, directory: Path) -> "Qwen3Engine":
-        checkpoint = Checkpoint.open(directory)
+        checkpoint = directory if isinstance(directory, Checkpoint) else Checkpoint.open(directory)
         config = Config.from_mapping(checkpoint.config)
         shapes = weight_shapes(config)
         weights = {}
@@ -218,6 +218,18 @@ class Qwen3Engine:
         scores /= scores.sum(axis=-1, keepdims=True)
         joined = (scores @ values).reshape(q_heads, steps, dim).transpose(1, 0, 2).reshape(steps, q_heads * dim)
         return joined @ weights["self_attn.o_proj.weight"].T
+
+
+def load_engine(directory):
+    """Load a supported CPU engine from the root architecture in config.json."""
+    checkpoint = Checkpoint.open(directory)
+    if checkpoint.model_type == "qwen3":
+        return Qwen3Engine.from_checkpoint(checkpoint)
+    if checkpoint.model_type == "deepseek_v41":
+        from deepseek import DeepSeekEngine
+
+        return DeepSeekEngine.from_checkpoint(checkpoint)
+    raise ValueError(f"Unsupported CPU model_type {checkpoint.model_type!r}")
 
 
 def tiny_weights() -> tuple[Config, dict[str, np.ndarray]]:
