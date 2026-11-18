@@ -222,9 +222,11 @@ def generate(args):
 
     if len(ids) + args.new_tokens - 1 > checkpoint.text_config["max_position_embeddings"]:
         raise ValueError("Prompt and generated tokens exceed the model context limit")
-    prompt_result = record_prompt(ids, tokenizer, image_prompt)
     if args.command == "prepare-prompt":
-        return {"model_type": checkpoint.model_type, "new_tokens": args.new_tokens, **prompt_result}
+        return {
+            "model_type": checkpoint.model_type, "new_tokens": args.new_tokens,
+            **record_prompt(ids, tokenizer, image_prompt),
+        }
 
     engine = load_engine(args.checkpoint, with_vision=image_prompt is not None)
     output_ids = greedy_ids(
@@ -233,7 +235,7 @@ def generate(args):
     )
     result = {
         "model_type": checkpoint.model_type, "device": "cpu", "dtype": "float32",
-        **prompt_result,
+        **record_prompt(ids, tokenizer, image_prompt),
         "output_ids": output_ids, "output_sha256": digest(output_ids),
     }
     if tokenizer is not None:

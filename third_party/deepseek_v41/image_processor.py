@@ -112,6 +112,22 @@ def plan_image_grid(width: int, height: int, args):
     return safe_resize(height, width, best_height, best_width, p, args.vision_downsample_ratio, args.vision_max_n_token)
 
 
+def pad_rgb(image, size):
+    # ImageOps.contain rounds an extremely thin axis down to zero. Preserve a
+    # single pixel on that axis when a small image-token budget forces this.
+    width, height = size
+    fitted_width = round(image.width / image.height * height)
+    fitted_height = round(image.height / image.width * width)
+    color = (127, 127, 127)
+    if fitted_width > 0 and fitted_height > 0:
+        return ImageOps.pad(image, size, color=color)
+    fitted = (1, height) if fitted_width == 0 else (width, 1)
+    canvas = Image.new("RGB", size, color)
+    offset = round((width - fitted[0]) / 2), round((height - fitted[1]) / 2)
+    canvas.paste(image.resize(fitted, resample=Image.Resampling.BICUBIC), offset)
+    return canvas
+
+
 def load_image(record, args):
     """Load and transform one image record into ViT patches."""
     p = args.vision_patch_size
@@ -122,7 +138,7 @@ def load_image(record, args):
     if args.vision_max_wh_ratio is not None and image.width >= args.vision_max_wh_ratio * image.height:
         image = image.resize((best_width, best_height))
     else:
-        image = ImageOps.pad(image, (best_width, best_height), color=(127, 127, 127))
+        image = pad_rgb(image, (best_width, best_height))
     x = torch.from_numpy(np.asarray(image, dtype=np.float32)).permute(2, 0, 1) / 255
     x = ((x - 0.5) / 0.5).to(torch.bfloat16)
     patches = x.reshape(3, n_vit_h, p, n_vit_w, p).permute(1, 3, 0, 2, 4).reshape(n_vit_h * n_vit_w, 3, p, p)

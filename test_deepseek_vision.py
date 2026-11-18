@@ -61,6 +61,16 @@ class DeepSeekVisionTests(unittest.TestCase):
             self.assertTrue(torch.equal(image.patches, blue_first.images[1 - i].patches))
         self.assertFalse(torch.equal(red_first.images[0].patches, red_first.images[1].patches))
 
+    def test_tall_and_wide_images_keep_a_nonempty_resized_axis(self):
+        for size in ((1, 1000), (1000, 1)):
+            with self.subTest(size=size):
+                path = self.root / "extreme.png"
+                Image.new("RGB", size, (255, 0, 0)).save(path)
+                image, = self.encode(path.name).images
+                self.assertLessEqual(image.types.numel(), 12)
+                self.assertGreaterEqual(min(image.n_vit_h, image.n_vit_w), 1)
+                self.assertTrue(torch.any(image.patches[:, 0] == 1))
+
     def test_images_change_the_reduced_prefill_and_engram_history(self):
         from engine import load_engine
         engine = load_engine(self.checkpoint, with_vision=True)

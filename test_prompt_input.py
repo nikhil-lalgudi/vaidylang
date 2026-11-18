@@ -100,6 +100,12 @@ class PromptInputTests(unittest.TestCase):
         options = ("--text", "Hello, world!", "--new-tokens", "1", "--thinking", "--reasoning-effort")
         self.assertEqual(self.generate(*options, "max"), self.generate(*options, "100"))
 
+    def test_oversized_raw_id_is_reported_without_a_traceback(self):
+        completed = self.invoke("--ids", "999999999999999999999999", "--new-tokens", "1")
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("token IDs", completed.stderr)
+        self.assertNotIn("Traceback", completed.stderr)
+
     def test_raw_ids_need_no_tokenizer(self):
         (self.checkpoint / "tokenizer.json").unlink()
         result = self.generate("--ids", "2", "11", "3", "7", "9")

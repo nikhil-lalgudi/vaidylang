@@ -131,7 +131,7 @@ patches, prefill logits and next decode logits differ.
 The published checkpoint has a 970,533,624-byte vision-only shard. Its 32-layer
 ViT and aligner produced 425 and 176 finite 5,120-wide rows on CPU for the
 upstream carrot and corn images at the published resize limit, using both
-native BF16 arithmetic and weights expanded to FP32. A separate BF16 check used
+BF16 tensors and weights expanded to FP32. A separate BF16 check used
 a 12-token image cap and produced six finite rows per image. These runs use
 published vision weights and stop at the aligner.
 [Published resize, BF16](results/deepseek-cpu/vision-bf16-published-resize.json) · [Published resize, FP32](results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](results/deepseek-cpu/vision-bf16-cap12.json)
@@ -211,9 +211,10 @@ case and `--document-cap` to limit the generated documents for a smaller run.
 To reproduce either 32,743-token run, create the fixture with `--context 65536`
 and omit `--vision`, then use `--case long-context-million --document-cap 32768
 --output-cap 8`.
-For frozen evidence, compare the prompt digest and token types before
-feeding the same prefix to another runtime. Compare logits on the reference
-continuation prefix even after a candidate model emits a different token.
+Before replay, compare the frozen prompt digest and token types. For image
+prompts, also compare each ordered span's source image and BF16 patch hashes.
+Compare logits on the reference continuation prefix even after a candidate
+model emits a different token.
 
 ## Compare the pinned upstream CPU paths
 
@@ -238,13 +239,13 @@ python3 -m tools.deepseek_upstream_checks --upstream "$upstream_dir"
 ```
 
 With PyTorch 2.15.0, Tokenizers 0.22.2, Safetensors 0.7.0 and the pinned metadata,
-81 of 91 unit tests passed with ten CUDA skips. The native E8M0 sharded load and
+83 of 93 unit tests passed with ten CUDA skips. The native E8M0 sharded load and
 two-process Gloo tests both passed on CPU. The regenerated dense and quantized
 parity reports and the Qwen3 CPU archive report matched the prior reports.
 
 ## GPU validation pending
 
-- Load and execute the full pinned text checkpoint on the selected topology. Validate real tokenizer-derived Engram mapping and embeddings, the model's published text prompt encoding, actual compressed and index state, and greedy logits against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Full multimodal language generation remains a GPU validation case.
+- Load and execute the full pinned text checkpoint on the selected topology. Validate gated Engram embeddings, compressed and index state, and greedy logits on the frozen prompts against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Full multimodal language generation remains a GPU validation case.
 - Compare device FP8/FP4 linears and expert outputs with the CPU golden vectors, including activation scaling, saturation and ties, BF16 boundaries, compressed KV with E4M3 scales, and indexed FP4 with E8M0 scales. Establish device tolerances from measured error.
 - Run real NCCL collectives and compare single-rank and multi-rank arithmetic on reduced checkpoints before validating full-weight rank layouts. Check routed experts, vocabulary gather, group output sum, Engram padding, and index score reduction.
 - Measure peak memory during load, prefill, decoding and graph capture. Validate raw-window rollover and compressed/index-cache growth at longer contexts through the published limit on an appropriate host. Measure allocator, kernel and collective workspace beyond the modeled buffers.
