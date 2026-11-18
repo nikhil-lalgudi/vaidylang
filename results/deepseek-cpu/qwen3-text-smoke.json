@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "model": "Qwen/Qwen3-0.6B",
+  "revision": "167b8104f88905a951069f5f95f9776908da5f68",
+  "asset_sha256": {
+    "config.json": "660db3b73d788119c04535e48cf9be5f55bc3100841a718637ae695b442f27dd",
+    "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "model.safetensors": "f47f71177f32bcd101b7573ec9171e6a57f4f4d31148d38e382306f42996874b"
+  },
+  "runtime": {
+    "torch": "2.4.1",
+    "numpy": "2.4.4",
+    "tokenizers": "0.22.2"
+  },
+  "prompt_text": "The capital of France is",
+  "new_tokens": 8,
+  "text_generation": {
+    "model_type": "qwen3",
+    "device": "cpu",
+    "dtype": "float32",
+    "prompt_ids": [
+      785,
+      6722,
+      315,
+      9625,
+      374
+    ],
+    "prompt_sha256": "e177aa63185dd12bb04c532b2590488d10af56632fe39e463faa67c8e377421b",
+    "tokenizer_sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "output_ids": [
+      12095,
+      13,
+      576,
+      6722,
+      315,
+      15344,
+      374,
+      21718
+    ],
+    "output_sha256": "18f11a63f62f5e2c1e394db91411aec5ec0a11be2f207884c123620ba9cf0591",
+    "output_text": " Paris. The capital of Italy is Rome",
+    "finish_reason": "length"
+  },
+  "raw_ids_replay": {
+    "model_type": "qwen3",
+    "device": "cpu",
+    "dtype": "float32",
+    "prompt_ids": [
+      785,
+      6722,
+      315,
+      9625,
+      374
+    ],
+    "prompt_sha256": "e177aa63185dd12bb04c532b2590488d10af56632fe39e463faa67c8e377421b",
+    "output_ids": [
+      12095,
+      13,
+      576,
+      6722,
+      315,
+      15344,
+      374,
+      21718
+    ],
+    "output_sha256": "18f11a63f62f5e2c1e394db91411aec5ec0a11be2f207884c123620ba9cf0591"
+  },
+  "exact_replay_match": true
+}

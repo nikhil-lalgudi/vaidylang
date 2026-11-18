@@ -243,6 +243,11 @@ With PyTorch 2.15.0, Tokenizers 0.22.2, Safetensors 0.7.0 and the pinned metadat
 two-process Gloo tests both passed on CPU. The regenerated dense and quantized
 parity reports and the Qwen3 CPU archive report matched the prior reports.
 
+The pinned Qwen3-0.6B weights also ran on CPU through the new text entry point.
+The prompt `The capital of France is` produced ` Paris. The capital of Italy
+is Rome` in eight greedy tokens. Replaying its five input IDs returned all
+eight output IDs and the same hashes. [Qwen3 text smoke and checkpoint hashes](results/deepseek-cpu/qwen3-text-smoke.json)
+
 ## GPU validation pending
 
 - Load and execute the full pinned text checkpoint on the selected topology. Validate gated Engram embeddings, compressed and index state, and greedy logits on the frozen prompts against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Full multimodal language generation remains a GPU validation case.
