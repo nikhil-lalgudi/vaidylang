@@ -118,6 +118,43 @@ GLOO_SOCKET_IFNAME=lo0 python3 -m unittest -v \
 | `test_cuda_engine.CudaEngineTests.test_tiled_block_attention_matches_scalar_across_tile_boundary` | Requires CUDA |
 | `test_cuda_engine.CudaEngineTests.test_tiled_decode_masks_padding_and_appends_gqa_cache` | Requires CUDA |
 
+## CPU vision checks
+
+The reduced engine accepts local images as actual pixel input. The pinned image
+processor forms BF16 patches and expands the image placeholder into start,
+patch, newline and end positions. The reduced ViT and aligner replace the text
+embeddings for those positions. They use the image router bias, contribute no
+Engram vectors, and mark the n-gram history so text after an image starts a new
+n-gram. In the same-size image swap test, the IDs and token types match while the
+patches, prefill logits and next decode logits differ.
+
+The published checkpoint has a 970,533,624-byte vision-only shard. CPU execution
+of its 32-layer ViT and aligner produced 425 and 176 finite 5,120-wide rows for
+the upstream carrot and corn images at the published resize limit, with the
+stored BF16 weights expanded to FP32 for arithmetic. The smaller BF16 CPU check
+used a 12-token image cap and produced six finite rows per image. These runs use
+published vision weights and stop at the aligner. [Published resize, FP32](results/deepseek-cpu/vision-fp32-published-resize.json) · [Reduced image cap, BF16](results/deepseek-cpu/vision-bf16-cap12.json)
+
+```bash
+vision_dir=$(mktemp -d)
+revision=314113f8a7dadb388215396ba5fbee2c610a04d6
+source_url="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/$revision"
+for asset in config.json tokenizer.json model-00001-of-00048.safetensors; do
+  curl -fsSL "$source_url/$asset" -o "$vision_dir/$asset"
+done
+for image in carrots.jpeg corn.jpeg; do
+  curl -fsSL "$source_url/inference/examples/images/$image" -o "$vision_dir/$image"
+done
+python3 -m tools.deepseek_vision_probe --checkpoint "$vision_dir" \
+  --shard "$vision_dir/model-00001-of-00048.safetensors" \
+  --image "$vision_dir/carrots.jpeg" --image "$vision_dir/corn.jpeg" \
+  --dtype float32 --output "$vision_dir/vision-report.json"
+```
+
+Use `--image-token-cap 12` and the default BF16 dtype for the smaller check.
+The probe verifies the config, tokenizer and shard before loading the weights.
+The reports include source image, patch and aligned-feature hashes.
+
 ## GPU validation pending
 
 - Load and execute the full pinned text checkpoint on the selected topology. Validate real tokenizer-derived Engram mapping and embeddings, the model's published text prompt encoding, actual compressed and index state, and greedy logits against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Image execution is separate.

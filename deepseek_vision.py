@@ -86,7 +86,7 @@ class ImagePrompt:
 
 
 def prepare_image_prompt(checkpoint, tokenizer, ids, records, base_directory):
-    torch, processor, _ = _vision_dependencies()
+    _, processor, _ = _vision_dependencies()
     args = vision_args(checkpoint)
     if tokenizer.backend.token_to_id(IMAGE_PLACEHOLDER) != args.image_token_id:
         raise ValueError("Tokenizer image placeholder does not match the checkpoint image token ID")
@@ -106,27 +106,44 @@ def prepare_image_prompt(checkpoint, tokenizer, ids, records, base_directory):
         images.append(processor.ImageInput(start, patches, vit_h, vit_w, types))
         expanded.extend([token] * types.numel())
         token_types.extend(types.tolist())
-        storage = patches.contiguous().view(torch.int16).numpy().astype("<i2", copy=False)
         metadata.append({
             "start": start, "tokens": types.numel(),
             "vit_grid": [vit_h, vit_w], "llm_grid": [llm_h, llm_w],
             "source_sha256": hashlib.sha256(raw).hexdigest(),
-            "bf16_patches_sha256": hashlib.sha256(storage.tobytes()).hexdigest(),
+            "bf16_patches_sha256": bf16_digest(patches),
         })
     return ImagePrompt(expanded, token_types, images, metadata)
 
 
-def _vision_modules(args):
+def vision_modules(args):
     torch, _, vision = _vision_dependencies()
     with torch.device("meta"):
         return {"vision": vision.ViT(args), "aligner": vision.Aligner(args)}
+
+
+def bf16_digest(tensor):
+    torch, _, _ = _vision_dependencies()
+    if tensor.dtype != torch.bfloat16:
+        raise ValueError("Expected a BF16 vision tensor")
+    storage = tensor.cpu().contiguous().view(torch.int16).numpy().astype("<i2", copy=False)
+    return hashlib.sha256(storage.tobytes()).hexdigest()
+
+
+def encode_image_rows(modules, image):
+    torch, _, _ = _vision_dependencies()
+    with torch.inference_mode():
+        patch_weight = modules["vision"].patch_embed.proj.weight
+        patches = image.patches.to(dtype=patch_weight.dtype, device=patch_weight.device)
+        grid = image.n_vit_h, image.n_vit_w
+        hidden = modules["vision"](patches, *grid)
+        return modules["aligner"](hidden, *grid)
 
 
 def vision_weight_shapes(checkpoint):
     args = vision_args(checkpoint)
     shapes = {
         f"{name}.{key}": tuple(weight.shape)
-        for name, module in _vision_modules(args).items()
+        for name, module in vision_modules(args).items()
         for key, weight in module.state_dict().items()
     }
     shapes.update({name: (args.dim,) for name in ("image_start", "image_end", "image_newline")})
@@ -143,7 +160,7 @@ class VisionTower:
         torch, _, _ = _vision_dependencies()
         args = vision_args(checkpoint)
         self.image_token_id = args.image_token_id
-        modules = _vision_modules(args)
+        modules = vision_modules(args)
         for name, module in modules.items():
             module.load_state_dict({
                 key: torch.from_numpy(weights[f"{name}.{key}"].copy())
@@ -154,16 +171,11 @@ class VisionTower:
         self.weights = weights
 
     def embeddings(self, image):
-        torch, processor, _ = _vision_dependencies()
+        _, processor, _ = _vision_dependencies()
         types = image.types.cpu().numpy()
         if types.ndim != 1 or not np.isin(types, range(4)).all():
             raise ValueError("Invalid DeepSeek image token types")
-        with torch.inference_mode():
-            patch_weight = self.modules["vision"].patch_embed.proj.weight
-            patches = image.patches.to(dtype=patch_weight.dtype, device=patch_weight.device)
-            grid = image.n_vit_h, image.n_vit_w
-            hidden = self.modules["vision"](patches, *grid)
-            rows = self.modules["aligner"](hidden, *grid).float().cpu().numpy()
+        rows = encode_image_rows(self.modules, image).float().cpu().numpy()
         if (types == processor.IMAGE).sum() != len(rows):
             raise ValueError("Image token grid does not match the aligner output")
         result = self.weights["image_start"][None, :].repeat(types.size, axis=0)
