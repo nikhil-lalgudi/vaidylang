@@ -13,6 +13,8 @@ import numpy as np
 
 from checkpoint import Checkpoint
 from engine import Qwen3Engine, load_engine, tiny_weights
+from prompt_input import PromptTokenizer, deepseek_prompt, eos_ids, read_messages
+from third_party.deepseek_v41.encoding import parse_tagged_text
 
 
 def digest(ids) -> str:
@@ -162,21 +164,62 @@ def checkpoint_identity(directory: Path) -> str:
     return f"{config_hash}/sharded-v1-{hashlib.sha256(manifest).hexdigest()}"
 
 
+def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=()):
+    logits, state = engine.prefill(prompt_ids, len(prompt_ids) + new_tokens - 1)
+    output_ids = []
+    for step in range(new_tokens):
+        token = int(logits.argmax())
+        output_ids.append(token)
+        if token in stop_ids or step + 1 == new_tokens:
+            break
+        logits = engine.decode(token, state)
+    return output_ids
+
+
 def generate(args):
     checkpoint = Checkpoint.open(args.checkpoint, metadata_only=True)
     if args.new_tokens < 1:
         raise ValueError("Use at least one output token")
+
+    ids, tokenizer, stop_ids = args.ids, None, ()
+    if ids is None:
+        text = args.text_file.read_text(encoding="utf-8") if args.text_file else args.text
+        if checkpoint.model_type == "deepseek_v41":
+            messages = read_messages(args.messages) if args.messages else [
+                {"role": "user", "content": parse_tagged_text(text)},
+            ]
+            text, images = deepseek_prompt(
+                messages, thinking=args.thinking, reasoning_effort=args.reasoning_effort,
+            )
+            if images:
+                raise ValueError("DeepSeek image generation requires a vision-capable engine")
+        elif args.messages or args.thinking or args.reasoning_effort is not None:
+            raise ValueError("Structured messages and thinking options require a DeepSeek V4.1 checkpoint")
+        tokenizer = PromptTokenizer.from_checkpoint(checkpoint)
+        ids = tokenizer.encode(text)
+        if not ids:
+            raise ValueError("Prompt must encode to at least one token")
+        image_id = checkpoint.config.get("image_token_id")
+        if image_id is not None and image_id in ids:
+            raise ValueError("Prompt image tokens require matching image content blocks")
+        stop_ids = eos_ids(checkpoint)
+    elif args.thinking or args.reasoning_effort is not None:
+        raise ValueError("Thinking options require text or structured messages")
+
     engine = load_engine(args.checkpoint)
-    logits, state = engine.prefill(args.ids, len(args.ids) + args.new_tokens - 1)
-    output_ids = [int(logits.argmax())]
-    for _ in range(args.new_tokens - 1):
-        logits = engine.decode(output_ids[-1], state)
-        output_ids.append(int(logits.argmax()))
-    return {
+    output_ids = greedy_ids(engine, ids, args.new_tokens, stop_ids)
+    result = {
         "model_type": checkpoint.model_type, "device": "cpu", "dtype": "float32",
-        "prompt_ids": args.ids, "prompt_sha256": digest(args.ids),
+        "prompt_ids": ids, "prompt_sha256": digest(ids),
         "output_ids": output_ids, "output_sha256": digest(output_ids),
     }
+    if tokenizer is not None:
+        result.update(
+            tokenizer_sha256=tokenizer.sha256,
+            output_text=tokenizer.decode([i for i in output_ids if i not in stop_ids]),
+            finish_reason="eos" if output_ids[-1] in stop_ids else "length",
+        )
+    return result
 
 
 def summarize_case(ids, new_tokens, samples) -> dict:
@@ -295,9 +338,15 @@ def parse_args(argv):
     inspection.add_argument("--checkpoint", type=Path, required=True)
     inspection.add_argument("--metadata-only", action="store_true", help="Inspect the index before downloading weight shards")
     inspection.add_argument("--output", type=Path)
-    generation = commands.add_parser("generate", help="Generate greedy token IDs with the CPU engine")
+    generation = commands.add_parser("generate", help="Generate a greedy continuation with the CPU engine")
     generation.add_argument("--checkpoint", type=Path, required=True)
-    generation.add_argument("--ids", type=int, nargs="+", required=True)
+    source = generation.add_mutually_exclusive_group(required=True)
+    source.add_argument("--ids", type=int, nargs="+", help="Replay token IDs for a fixed number of steps")
+    source.add_argument("--text", help="Encode text as a DeepSeek user turn or raw Qwen3 text")
+    source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
+    source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
+    generation.add_argument("--thinking", action="store_true", help="Use DeepSeek thinking mode")
+    generation.add_argument("--reasoning-effort", type=int, metavar="1–100")
     generation.add_argument("--new-tokens", type=int, default=16)
     generation.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")

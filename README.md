@@ -48,6 +48,27 @@ python3 -m deepseek_fixture "$fixture_dir"
 python3 harness.py generate --checkpoint "$fixture_dir" --ids 2 11 3 7 9 --new-tokens 16
 ```
 
+Install `tokenizers` for text input, then use the checkpoint's local `tokenizer.json`.
+DeepSeek wraps plain text as a user turn with its pinned V4.1 encoder. Qwen3
+tokenizes plain text as a raw completion prefix. The reduced tokenizer below
+uses a synthetic vocabulary and exercises the CLI on the reduced weights.
+
+```bash
+python3 -m pip install tokenizers
+python3 -m deepseek_fixture "$fixture_dir" --with-tokenizer
+python3 harness.py generate --checkpoint "$fixture_dir" --text 'Hello, world!' --new-tokens 4
+python3 harness.py generate --checkpoint "$fixture_dir" --text-file prompt.txt
+python3 harness.py generate --checkpoint "$fixture_dir" --messages messages.json
+```
+
+`messages.json` is a JSON array of DeepSeek role and content objects, such as
+`[{"role":"system","content":"Be brief."},{"role":"user","content":"Hello, world!"}]`.
+Use `--thinking` and optionally `--reasoning-effort 1–100` to use the pinned
+reasoning format. Text and chat stop at checkpoint EOS and return decoded text,
+the tokenizer SHA-256, and the prompt and continuation IDs with their hashes.
+The continuation IDs include EOS when emitted. `--ids` replays a fixed number
+of steps and works with checkpoints that have no tokenizer.
+
 The CPU reference materializes reduced weights and uses scalar cache updates, including when verifying a block of draft tokens. The published checkpoint is available to the metadata and placement tools. CPU reproduction commands, numerical results, and pending GPU checks are in the [DeepSeek CPU reference handoff](deepseek-cpu-reference.md).
 
 ## Check the public Qwen3 checkpoint

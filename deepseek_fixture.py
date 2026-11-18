@@ -116,10 +116,32 @@ def write_fixture(path, *, quantized=True, seed=27):
     return path
 
 
+def write_fixture_tokenizer(path, *, size=96):
+    try:
+        from tokenizers import Tokenizer, models, pre_tokenizers
+    except ImportError as error:
+        raise ValueError("Install tokenizers to generate the fixture tokenizer") from error
+
+    tokens = [
+        "<｜begin▁of▁sentence｜>", "<｜end▁of▁sentence｜>", "<｜▁pad▁｜>", "[UNK]",
+        "<｜User｜>", "<｜Assistant｜>", "</think>", "<think>", "<｜System｜>",
+        "Hello,", "world!", "Blue.", "Again?", "Be", "brief.",
+    ]
+    tokens += [f"sample-{i}" for i in range(size - len(tokens))]
+    backend = Tokenizer(models.WordLevel(dict(zip(tokens, range(size))), unk_token="[UNK]"))
+    backend.pre_tokenizer = pre_tokenizers.WhitespaceSplit()
+    backend.add_special_tokens(tokens[:9])
+    backend.save(str(path))
+    return backend
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--dense", action="store_true")
     parser.add_argument("--seed", type=int, default=27)
+    parser.add_argument("--with-tokenizer", action="store_true", help="Write the matching synthetic tokenizer")
     args = parser.parse_args()
     write_fixture(args.output, quantized=not args.dense, seed=args.seed)
+    if args.with_tokenizer:
+        write_fixture_tokenizer(args.output / "tokenizer.json")
