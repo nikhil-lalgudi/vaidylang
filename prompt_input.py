@@ -27,7 +27,9 @@ class PromptTokenizer:
         except Exception as error:
             raise ValueError(f"Could not load tokenizer from {path}: {error}") from error
         ids = set(backend.get_vocab().values())
-        vocab_size = checkpoint.text_config["vocab_size"]
+        vocab_size = checkpoint.text_config.get("vocab_size")
+        if type(vocab_size) is not int or vocab_size < 1:
+            raise ValueError("Checkpoint requires a positive vocabulary size")
         # Published Qwen3 pads its embedding and head rows above the tokenizer's IDs.
         if (not ids or ids != set(range(len(ids))) or len(ids) > vocab_size
                 or (checkpoint.model_type == "deepseek_v41" and len(ids) != vocab_size)):
@@ -48,6 +50,12 @@ def read_messages(path: Path):
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def read_reasoning_effort(value):
+    if value in encoding.REASONING_EFFORT_MAPPINGS:
+        return value
+    return int(value)
+
+
 def deepseek_prompt(messages, *, thinking=False, reasoning_effort=None):
     if not isinstance(messages, list) or not messages:
         raise ValueError("Messages must be a nonempty JSON array")
@@ -58,10 +66,13 @@ def deepseek_prompt(messages, *, thinking=False, reasoning_effort=None):
             raise ValueError(f"Invalid role in message {index + 1}")
         if not isinstance(message.get("content"), (str, list, type(None))):
             raise ValueError(f"Invalid content in message {index + 1}")
-    if reasoning_effort is not None and (
-        not thinking or type(reasoning_effort) is not int or not 1 <= reasoning_effort <= 100
-    ):
-        raise ValueError("Reasoning effort must be an integer from 1 to 100 and requires --thinking")
+    if reasoning_effort is not None:
+        if not thinking:
+            raise ValueError("Reasoning effort requires --thinking")
+        if type(reasoning_effort) is str and reasoning_effort in encoding.REASONING_EFFORT_MAPPINGS:
+            reasoning_effort = encoding.REASONING_EFFORT_MAPPINGS[reasoning_effort]
+        if type(reasoning_effort) is not int or not 1 <= reasoning_effort <= 100:
+            raise ValueError("Reasoning effort must be 1 to 100 or one of low, high or max")
     try:
         prompt, media = encoding.encode_messages(
             messages, thinking_mode="thinking" if thinking else "chat",

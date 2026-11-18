@@ -155,6 +155,58 @@ Use `--image-token-cap 12` and the default BF16 dtype for the smaller check.
 The probe verifies the config, tokenizer and shard before loading the weights.
 The reports include source image, patch and aligned-feature hashes.
 
+## 100-prompt workload
+
+The [manifest](fixtures/deepseek-prompts.jsonl) contains 100 distinct cases, ten
+each for coding, logic and math, multilingual input, multi-turn chat,
+extraction, summarization, token boundaries, chat and tool protocol,
+long documents, and images. The ten long documents place a fact near the
+beginning, repeat a controlled distractor passage, and ask about the fact at
+the end. Edit a document's `target_tokens` to change its length. The compiler
+measures the rendered prompt with the tokenizer and leaves space for
+`new_tokens`. For an existing document, use `harness.py prepare-prompt
+--text-file` with the file path.
+
+| CPU workload | Prompts | Longest input | Generated tokens |
+| --- | ---: | ---: | ---: |
+| [Published tokenizer and image preparation](results/deepseek-cpu/prompts-frozen.json.gz) | 100 | 1,048,427 | |
+| [Reduced dense model](results/deepseek-cpu/prompts-smoke-dense.json.gz) | 100 | 512 | 800 |
+| [Reduced FP8/FP4 model](results/deepseek-cpu/prompts-smoke-quantized.json.gz) | 100 | 512 | 800 |
+
+The frozen artifact records the exact prompt IDs, hashes, token budgets,
+expected answers, and expanded image spans. It contains 2,102,202 prompt
+tokens and 12 image spans. Each reduced run uses the published tokenizer and
+its real Engram map, the reduced text and vision topology, synthetic weights,
+a 512-token cap on generated documents, and an eight-token output cap. The
+reports preserve every greedy ID, each evaluated prefix hash, the top five
+logits and a digest of the full logit vector. They measure execution and
+reproducibility. The manifest's expected answers are for full-checkpoint
+evaluation. Swapping two same-size images keeps IDs and token types identical
+and changes the first logit vector and greedy sequence in both reduced models.
+
+```bash
+export CUDA_VISIBLE_DEVICES='' OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1
+metadata_dir=$(mktemp -d)
+report_dir=$(mktemp -d)
+revision=314113f8a7dadb388215396ba5fbee2c610a04d6
+source_url="https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/resolve/$revision"
+for asset in config.json tokenizer.json; do
+  curl -fsSL "$source_url/$asset" -o "$metadata_dir/$asset"
+done
+python3 -m tools.deepseek_prompts freeze --checkpoint "$metadata_dir" \
+  --output "$report_dir/prompts-frozen.json.gz"
+python3 -m deepseek_fixture "$report_dir/reduced" --vision --context 4096 \
+  --published-tokenizer "$metadata_dir/tokenizer.json"
+python3 -m tools.deepseek_prompts smoke --checkpoint "$report_dir/reduced" \
+  --document-cap 512 --output-cap 8 --output "$report_dir/prompts-smoke-quantized.json.gz"
+```
+
+Use `--dense` when creating a dense fixture. Use `--case` to select a named
+case and `--document-cap` to limit the generated documents for a smaller run.
+For frozen evidence, compare the prompt digest and token types before
+feeding the same prefix to another runtime. Compare logits on the reference
+continuation prefix even after a candidate model emits a different token.
+
 ## GPU validation pending
 
 - Load and execute the full pinned text checkpoint on the selected topology. Validate real tokenizer-derived Engram mapping and embeddings, the model's published text prompt encoding, actual compressed and index state, and greedy logits against the pinned DeepSeek runtime. The CPU reference caps materialized storage at 512 MiB. Image execution is separate.

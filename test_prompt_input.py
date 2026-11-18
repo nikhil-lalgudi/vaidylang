@@ -96,6 +96,10 @@ class PromptInputTests(unittest.TestCase):
         inline = self.generate("--text", path.read_text(encoding="utf-8"), "--new-tokens", "1")
         self.assertEqual(inline, self.generate("--text-file", str(path), "--new-tokens", "1"))
 
+    def test_reasoning_effort_alias_matches_the_published_numeric_value(self):
+        options = ("--text", "Hello, world!", "--new-tokens", "1", "--thinking", "--reasoning-effort")
+        self.assertEqual(self.generate(*options, "max"), self.generate(*options, "100"))
+
     def test_raw_ids_need_no_tokenizer(self):
         (self.checkpoint / "tokenizer.json").unlink()
         result = self.generate("--ids", "2", "11", "3", "7", "9")

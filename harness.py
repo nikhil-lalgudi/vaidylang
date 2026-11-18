@@ -13,7 +13,7 @@ import numpy as np
 
 from checkpoint import Checkpoint
 from engine import Qwen3Engine, load_engine, tiny_weights
-from prompt_input import eos_ids, prepare_prompt, read_messages
+from prompt_input import eos_ids, prepare_prompt, read_messages, read_reasoning_effort
 
 
 def digest(ids) -> str:
@@ -163,7 +163,7 @@ def checkpoint_identity(directory: Path) -> str:
     return f"{config_hash}/sharded-v1-{hashlib.sha256(manifest).hexdigest()}"
 
 
-def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=(), *, images=None):
+def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=(), *, images=None, observe=None):
     capacity = len(prompt_ids) + new_tokens - 1
     if images:
         logits, state = engine.prefill(prompt_ids, capacity, images=images)
@@ -173,6 +173,8 @@ def greedy_ids(engine, prompt_ids, new_tokens, stop_ids=(), *, images=None):
     for step in range(new_tokens):
         token = int(logits.argmax())
         output_ids.append(token)
+        if observe is not None:
+            observe(logits, token)
         if token in stop_ids or step + 1 == new_tokens:
             break
         logits = engine.decode(token, state)
@@ -371,7 +373,7 @@ def parse_args(argv):
         source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
         source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
         generation.add_argument("--thinking", action="store_true", help="Use DeepSeek thinking mode")
-        generation.add_argument("--reasoning-effort", type=int, metavar="1–100")
+        generation.add_argument("--reasoning-effort", type=read_reasoning_effort, metavar="1–100|low|high|max")
         generation.add_argument("--new-tokens", type=int, default=16)
         generation.add_argument("--output", type=Path)
     comparison = commands.add_parser("compare")

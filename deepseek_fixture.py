@@ -1,6 +1,7 @@
 """Generate deterministic dense or natively byte-encoded reduced DeepSeek shards."""
 
 import argparse
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -9,7 +10,7 @@ import numpy as np
 
 from checkpoint import Checkpoint
 from deepseek_config import DeepSeekConfig, weight_shapes
-from deepseek_engram import bucket_layout
+from deepseek_engram import _map_tokenizer, bucket_layout
 from deepseek_quant import quantized_shapes
 from deepseek_weights import quant_layout, scale_name
 
@@ -99,14 +100,33 @@ def _quant_weight(rng, shape, encoding, block):
     return (code, raw), ("F8_E8M0", np.full(scales, exponent + 127, np.uint8))
 
 
-def write_fixture(path, *, quantized=True, seed=27, vision=False):
+def write_fixture(
+    path, *, quantized=True, seed=27, vision=False, published_tokenizer=None, context=None,
+):
     path = Path(path)
     path.mkdir(parents=True, exist_ok=True)
     root = fixture_config(quantized, vision=vision)
+    text = root["text_config"]
+    if context is not None:
+        if type(context) is not int or context < 1:
+            raise ValueError("Fixture context must be positive")
+        text["max_position_embeddings"] = context
+    if published_tokenizer is not None:
+        tokenizer = Path(published_tokenizer)
+        data = tokenizer.read_bytes()
+        expected = "c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b"
+        if hashlib.sha256(data).hexdigest() != expected:
+            raise ValueError("Expected the pinned DeepSeek V4.1 Flash tokenizer.json")
+        text.update(vocab_size=129280, engram_compressed_vocab_size=99092, dspark_noise_token_id=128799)
+        if vision:
+            root["image_token_id"] = 129264
+        tokens = _map_tokenizer(tokenizer, text["vocab_size"])
+        (path / "tokenizer.json").write_bytes(data)
+    else:
+        tokens = [i % text["engram_compressed_vocab_size"] for i in range(text["vocab_size"])]
     cfg = DeepSeekConfig.from_mapping(root)
-    (path / "config.json").write_text(json.dumps(root, indent=2) + "\n")
-    tokens = [i % cfg.engram_compressed_vocab_size for i in range(cfg.vocab_size)]
-    (path / "engram_token_map.json").write_text(json.dumps(tokens) + "\n")
+    (path / "config.json").write_text(json.dumps(root, indent=2) + "\n", encoding="utf-8")
+    (path / "engram_token_map.json").write_text(json.dumps(tokens) + "\n", encoding="utf-8")
     rng = np.random.default_rng(seed)
     shards = [{}, {}]
     shapes = weight_shapes(cfg)
@@ -114,7 +134,8 @@ def write_fixture(path, *, quantized=True, seed=27, vision=False):
         from deepseek_vision import vision_weight_shapes
 
         shapes.update(vision_weight_shapes(Checkpoint.open(path, metadata_only=True)))
-        write_fixture_tokenizer(path / "tokenizer.json")
+        if published_tokenizer is None:
+            write_fixture_tokenizer(path / "tokenizer.json")
     for i, (name, shape) in enumerate(shapes.items()):
         layout = quant_layout(name) if quantized else None
         if layout:
@@ -157,9 +178,15 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--dense", action="store_true")
     parser.add_argument("--seed", type=int, default=27)
-    parser.add_argument("--with-tokenizer", action="store_true", help="Write the matching synthetic tokenizer")
+    tokenizers = parser.add_mutually_exclusive_group()
+    tokenizers.add_argument("--with-tokenizer", action="store_true", help="Write the matching synthetic tokenizer")
+    tokenizers.add_argument("--published-tokenizer", type=Path, help="Use the pinned tokenizer and its real Engram map")
+    parser.add_argument("--context", type=int, help="Override the fixture context size in tokens")
     parser.add_argument("--vision", action="store_true", help="Include a reduced vision tower and tokenizer")
     args = parser.parse_args()
-    write_fixture(args.output, quantized=not args.dense, seed=args.seed, vision=args.vision)
+    write_fixture(
+        args.output, quantized=not args.dense, seed=args.seed, vision=args.vision,
+        published_tokenizer=args.published_tokenizer, context=args.context,
+    )
     if args.with_tokenizer and not args.vision:
         write_fixture_tokenizer(args.output / "tokenizer.json")

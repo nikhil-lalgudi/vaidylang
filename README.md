@@ -63,8 +63,8 @@ python3 harness.py generate --checkpoint "$fixture_dir" --messages messages.json
 
 `messages.json` is a JSON array of DeepSeek role and content objects, such as
 `[{"role":"system","content":"Be brief."},{"role":"user","content":"Hello, world!"}]`.
-Use `--thinking` and optionally `--reasoning-effort 1–100` to use the pinned
-reasoning format. Text and chat stop at checkpoint EOS and return decoded text,
+Use `--thinking` with an optional `--reasoning-effort` from 1 to 100, or
+`low`, `high` or `max`, to use the pinned reasoning format. Text and chat stop at checkpoint EOS and return decoded text,
 the tokenizer SHA-256, and the prompt and continuation IDs with their hashes.
 The continuation IDs include EOS when emitted. `--ids` replays a fixed number
 of steps and works with checkpoints that have no tokenizer.
@@ -88,6 +88,12 @@ python3 harness.py prepare-prompt --checkpoint "$vision_dir" --messages messages
 positions, grids, source hashes and BF16 patch hashes without loading weights.
 Reduced vision generation uses synthetic weights, so it tests pixel input,
 embedding replacement, routing, Engram masking and decode state.
+
+The [100-prompt corpus](fixtures/deepseek-prompts.jsonl) includes multilingual,
+tool-call, long-document and image cases. The threshold for the largest compiled
+prompt is configurable up to the checkpoint context limit. The
+[reproduction commands and frozen IDs](deepseek-cpu-reference.md#100-prompt-workload)
+cover the published tokenizer and reduced CPU generation.
 
 The CPU reference materializes reduced weights and uses scalar cache updates, including when verifying a block of draft tokens. The published checkpoint is available to the metadata and placement tools. CPU reproduction commands, numerical results, and pending GPU checks are in the [DeepSeek CPU reference handoff](deepseek-cpu-reference.md).
 
