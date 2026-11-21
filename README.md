@@ -38,7 +38,9 @@ OPENBLAS_NUM_THREADS=1 python3 harness.py generate \
 
 The [CPU container guide](docker/README.md) covers Docker and VS Code Dev
 Containers. The [Claude](.claude/settings.json) and [Codex](.codex/config.toml)
-project settings use the CPU workflow’s thread limits.
+project settings use the CPU workflow’s thread limits. See the
+[CPU validation skill](.skills/cpu-validation/SKILL.md) for choosing and
+interpreting a check.
 
 ## Guides and reports
 
