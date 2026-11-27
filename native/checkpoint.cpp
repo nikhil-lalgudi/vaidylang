@@ -209,6 +209,13 @@ void MappedTensor::read(std::size_t offset, std::span<float> output) const {
     }
 }
 
+std::span<const std::byte> MappedTensor::bf16_bytes() const noexcept {
+    if (!mapping_ || dtype_ != Dtype::bf16) {
+        return {};
+    }
+    return {mapping_->data + start_, count_ * sizeof(std::uint16_t)};
+}
+
 Qwen3Config load_qwen3_config(const fs::path& directory) {
     const auto config = read_json(directory / "config.json");
     if (config.value("model_type", "") != "qwen3" || config.value("hidden_act", "") != "silu" ||

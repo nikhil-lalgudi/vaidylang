@@ -22,6 +22,8 @@ public:
     enum class Dtype { fp32, bf16, fp16 };
 
     void read(std::size_t offset, std::span<float> output) const;
+    // The view is valid while this tensor's mapping is alive.
+    std::span<const std::byte> bf16_bytes() const noexcept;
 
 private:
     std::shared_ptr<const Mapping> mapping_;

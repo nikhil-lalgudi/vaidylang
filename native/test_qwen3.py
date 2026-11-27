@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
-from engine import Qwen3Engine, load_engine, tiny_weights
+from engine import Qwen3Engine, load_engine, tiny_weights, weight_shapes
 from harness import greedy_ids
 from test_engine import write_checkpoint_weights
 
@@ -84,5 +84,38 @@ def main(executable):
             assert invalid.returncode != 0 and "header" in invalid.stderr
 
 
+def check_large_bf16():
+    config, _ = tiny_weights()
+    config = replace(config, hidden_size=257, vocab_size=65537)
+    rng = np.random.default_rng(15)
+    tensors = {}
+    for name, shape in weight_shapes(config).items():
+        if name == "model.embed_tokens.weight":
+            embedding = np.zeros(shape, dtype="<u2")
+            tokens = [0, 1, 3, 9, 17, config.vocab_size - 1]
+            values = rng.standard_normal((len(tokens), shape[1]), dtype=np.float32)
+            embedding[tokens] = (values.view(np.uint32) >> 16).astype("<u2")
+            tensors[name] = ("BF16", embedding)
+        else:
+            data = rng.standard_normal(shape, dtype=np.float32)
+            values = 1 + 0.1 * data if len(shape) == 1 else data / np.sqrt(np.float32(shape[-1]))
+            tensors[name] = ("F32", values.astype("<f4"))
+    with TemporaryDirectory() as directory:
+        path = Path(directory)
+        (path / "config.json").write_text(json.dumps({
+            **asdict(config), "model_type": "qwen3", "hidden_act": "silu",
+        }))
+        write_checkpoint_weights(path / "model.safetensors", tensors)
+        reference = Qwen3Engine.from_checkpoint(path)
+        engine = load_engine(path, cpu_backend="native")
+        ids = [3, config.vocab_size - 1, 1]
+        actual, state = engine.prefill(ids, 4)
+        expected, oracle = reference.prefill(ids, 4)
+        np.testing.assert_allclose(actual, expected, rtol=3e-5, atol=3e-5)
+        np.testing.assert_allclose(engine.decode(17, state), reference.decode(17, oracle), rtol=3e-5, atol=3e-5)
+
+
 if __name__ == "__main__":
     main(sys.argv[1])
+    if sys.platform == "darwin" and os.environ.get("VAIDYLANG_CPU_LIBRARY"):
+        check_large_bf16()

@@ -1,5 +1,6 @@
 #include "qwen3.hpp"
 
+#include "bf16_projection.hpp"
 #include "checkpoint.hpp"
 
 #include <algorithm>
@@ -46,6 +47,50 @@ struct Matrix {
     int rows;
     int columns;
     std::vector<float> data;
+};
+
+struct TokenTable {
+    TokenTable(int rows, int columns) : rows(rows), columns(columns) {}
+
+    void read(Checkpoint& checkpoint, const std::string& name) {
+#if defined(__APPLE__) && defined(__aarch64__)
+        // Small tables fit in cache and run faster with the ordinary BLAS path.
+        constexpr std::size_t min_packed_elements = 1 << 24;
+        if (elements({rows, columns}) >= min_packed_elements) {
+            auto tensor = checkpoint.map(name, {rows, columns});
+            if (!tensor.bf16_bytes().empty()) {
+                packed = std::move(tensor);
+                return;
+            }
+        }
+#endif
+        dense = std::make_unique<Matrix>(rows, columns);
+        dense->read(checkpoint, name);
+    }
+
+    void embed(int token, float* output) const {
+        const auto offset = static_cast<std::size_t>(token) * columns;
+        if (dense) {
+            std::copy_n(dense->data.data() + offset, columns, output);
+        } else {
+            packed.read(offset, {output, static_cast<std::size_t>(columns)});
+        }
+    }
+
+    void project(const float* input, float* output) const {
+#if defined(__APPLE__) && defined(__aarch64__)
+        if (!dense) {
+            project_bf16_vocabulary(packed.bf16_bytes().data(), rows, columns, input, output);
+            return;
+        }
+#endif
+        dense->project(1, input, output);
+    }
+
+    int rows;
+    int columns;
+    std::unique_ptr<Matrix> dense;
+    MappedTensor packed;
 };
 
 struct Layer {
@@ -130,7 +175,7 @@ struct Qwen3::Weights {
         embeddings.read(checkpoint, "model.embed_tokens.weight");
         checkpoint.read("model.norm.weight", {c.hidden}, final_norm);
         if (!c.tied) {
-            head = std::make_unique<Matrix>(c.vocab, c.hidden);
+            head = std::make_unique<TokenTable>(c.vocab, c.hidden);
             head->read(checkpoint, "lm_head.weight");
         }
         layers.reserve(c.layers);
@@ -142,8 +187,8 @@ struct Qwen3::Weights {
         }
     }
 
-    Matrix embeddings;
-    std::unique_ptr<Matrix> head;
+    TokenTable embeddings;
+    std::unique_ptr<TokenTable> head;
     std::vector<float> final_norm, frequencies;
     std::vector<Layer> layers;
 };
@@ -176,8 +221,7 @@ struct Qwen3::Request::Buffers {
         sine.resize(cosine.size());
         scores.resize(elements({steps, end}));
         for (int t = 0; t < steps; ++t) {
-            std::copy_n(weights->embeddings.data.data() + static_cast<std::size_t>(ids[t]) * c.hidden,
-                c.hidden, row(hidden, t, c.hidden));
+            weights->embeddings.embed(ids[t], row(hidden, t, c.hidden));
             for (int d = 0; d < half; ++d) {
                 const float angle = static_cast<float>(length + t) * weights->frequencies[d];
                 row(cosine, t, half)[d] = std::cos(angle);
@@ -255,7 +299,7 @@ struct Qwen3::Request::Buffers {
         if (!logits.empty()) {
             normalize(row(hidden, steps - 1, c.hidden), normalized.data(), weights->final_norm, c.norm_eps);
             const auto& head = weights->head ? *weights->head : weights->embeddings;
-            head.project(1, normalized.data(), logits.data());
+            head.project(normalized.data(), logits.data());
         }
         length = end;
     }

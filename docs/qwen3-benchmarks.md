@@ -44,6 +44,43 @@ OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python harness.py verify \
 
 The Transformers oracle recomputes every prefix in FP32. `--oracle-device cuda` puts the oracle on a CUDA GPU. This command runs VaidyLang on CPU. The local FP32 run passed on both forced and greedy paths at prompt lengths 16 and 64 with four output tokens, 128 with 32 output tokens, and 1,024 with two output tokens. [Short prompts](../results/hf-parity.json) · [128 tokens](../results/hf-parity-extended.json) · [1,024 tokens](../results/hf-parity-1024.json)
 
+## Benchmark the C++ CPU engine
+
+Build the [C++ CPU engine](../README.md#build-the-c-cpu-engine) and use the
+same checkpoint, seed, and BLAS settings for both runs.
+
+```bash
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+report_dir=$(mktemp -d)
+for backend in python native; do
+  python harness.py bench --checkpoint checkpoints/Qwen3-0.6B \
+    --cpu-backend "$backend" --prompt-lengths 8 128 512 --new-tokens 8 \
+    --seed 123 --warmup 2 --repeats 7 --output "$report_dir/$backend.json"
+done
+python harness.py compare --baseline "$report_dir/python.json" \
+  --candidate "$report_dir/native.json"
+```
+
+The native runner packs Q/K/V and gate/up projections, reuses request-local
+buffers, and processes prefill in blocks of 128 tokens. On Apple Silicon,
+large BF16 token tables stay memory-mapped in their original format. The
+output projection uses up to four dispatch work items with FP32 accumulation.
+
+On an Apple M2 Pro, paired runs on the pinned Qwen3-0.6B checkpoint
+produced identical greedy token sequences. The maximum absolute difference
+across teacher-forced logits was `9.23e-5`.
+
+| Prompt tokens | Median first token, NumPy → C++ | Median output token, NumPy → C++ |
+| ---: | ---: | ---: |
+| 8 | 398.6 → 267.2 ms | 115.5 → 87.9 ms |
+| 128 | 506.6 → 445.4 ms | 104.0 → 72.9 ms |
+| 512 | 2,054.5 → 2,019.2 ms | 94.0 → 77.5 ms |
+
+The 21-request repeat at 8 prompt tokens measured 125.4 → 106.0 ms
+median first-token latency and 164.8 → 243.6 ms p95. Accelerate vector
+exponentials were tested separately and reverted after increasing median
+prefill latency for the 128- and 512-token cases.
+
 ## Reproduce the batch-1 CUDA benchmark
 
 1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a CUDA 13.0 toolkit, a compatible NVIDIA driver, a C++ compiler, and Ninja. Set `CUDA_HOME` and prepend its `bin` directory to `PATH` so JIT compilation uses that toolkit. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and generates 128 greedy tokens including after EOS.
