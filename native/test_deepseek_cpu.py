@@ -1,4 +1,4 @@
-"""Check native DeepSeek activation quantization against the NumPy reference."""
+"""Check native DeepSeek CPU operations against the NumPy reference."""
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -8,6 +8,7 @@ import numpy as np
 
 from deepseek import DeepSeekEngine
 from deepseek_fixture import write_fixture
+from deepseek_ops import _native_hc, split_hc
 from deepseek_quant import _native_quantizer, quantize_activation
 
 
@@ -50,5 +51,23 @@ def main():
             np.testing.assert_array_equal(actual, expected)
 
 
+def check_hyper_connections():
+    assert _native_hc() is not None
+    rng = np.random.default_rng(70)
+    for count in (1, 3, 4, 8):
+        width = count * (count + 2)
+        scale = np.array([.2, -1.25, 3.], dtype=np.float32)
+        base = rng.standard_normal(width, dtype=np.float32)
+        for shape in ((width,), (7, width), (2, 0, width), (2, 3, width)):
+            mixes = rng.standard_normal(shape, dtype=np.float32)
+            for iterations in (1, 4, 20):
+                actual = split_hc(mixes, scale, base, count, iterations, 1e-6)
+                with patch("deepseek_ops._native_hc", return_value=None):
+                    expected = split_hc(mixes, scale, base, count, iterations, 1e-6)
+                for got, wanted in zip(actual, expected, strict=True):
+                    np.testing.assert_allclose(got, wanted, rtol=3e-6, atol=3e-7)
+
+
 if __name__ == "__main__":
     main()
+    check_hyper_connections()

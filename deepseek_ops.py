@@ -3,6 +3,7 @@
 See docs/deepseek-cpu-reference.md and LICENSE.DeepSeek.
 """
 
+from functools import cache
 import math
 
 import numpy as np
@@ -83,7 +84,35 @@ def index_scores(q, keys, weights):
     return (dots * weights[:, None]).sum(axis=0) / math.sqrt(q.shape[0] * q.shape[1])
 
 
+@cache
+def _native_hc():
+    from ctypes import c_float, c_int, c_size_t, c_void_p
+
+    from native_cpu import load_library
+
+    function = getattr(load_library(), "vaidy_split_hyper_connections", None)
+    if function is not None:
+        function.argtypes = [c_void_p, c_void_p, c_void_p, c_void_p, c_size_t, c_size_t, c_int, c_float]
+        function.restype = None
+    return function
+
+
 def split_hc(mixes, scale, base, count, iterations, eps):
+    native = _native_hc()
+    width = count * (count + 2)
+    if (
+        native is not None and count > 0 and type(iterations) is int and 1 <= iterations < 2**31
+        and type(eps) in (float, int)
+        and all(isinstance(a, np.ndarray) and a.dtype == np.float32 and a.flags.c_contiguous
+                for a in (mixes, scale, base))
+        and mixes.shape[-1:] == (width,) and scale.shape == (3,) and base.shape == (width,)
+    ):
+        result = np.empty_like(mixes)
+        native(mixes.ctypes.data, scale.ctypes.data, base.ctypes.data, result.ctypes.data,
+               mixes.size // width, count, iterations, eps)
+        comb = result[..., 2 * count:].reshape(*mixes.shape[:-1], count, count)
+        return result[..., :count], result[..., count:2 * count], comb
+
     pre = sigmoid(mixes[..., :count] * scale[0] + base[:count]) + eps
     post = 2 * sigmoid(mixes[..., count:2 * count] * scale[1] + base[count:2 * count])
     comb = mixes[..., 2 * count:] * scale[2] + base[2 * count:]

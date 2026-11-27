@@ -1,3 +1,4 @@
+#include "hyper_connections.hpp"
 #include "qwen3.hpp"
 #include "quantize.hpp"
 
@@ -66,6 +67,11 @@ VAIDY_EXPORT bool vaidy_quantize_activation(const float* input, float* output, s
         vaidy::quantize_activation(input, output, rows, width, group, fp4, fp8_scale);
         return true;
     });
+}
+
+VAIDY_EXPORT void vaidy_split_hyper_connections(const float* mixes, const float* scale,
+    const float* base, float* output, std::size_t rows, std::size_t count, int iterations, float eps) noexcept {
+    vaidy::split_hyper_connections(mixes, scale, base, output, rows, count, iterations, eps);
 }
 
 }  // extern "C"

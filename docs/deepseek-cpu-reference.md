@@ -2,7 +2,30 @@
 
 Run the commands below from the repository root. See the [report index](../results/README.md) for archived runs.
 
-The text topology and storage encodings are derived from the DeepSeek V4.1 Flash [release repository](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/314113f8a7dadb388215396ba5fbee2c610a04d6), revision `314113f8a7dadb388215396ba5fbee2c610a04d6`. DeepSeek's MIT license is retained in [LICENSE.DeepSeek](../LICENSE.DeepSeek). The CPU implementation uses NumPy reference arithmetic on reduced buffers.
+The text topology and storage encodings follow DeepSeek V4.1 Flash revision `314113f8a7dadb388215396ba5fbee2c610a04d6`. The reduced CPU engine uses NumPy and can run activation quantization and hyper-connections in C++. [Release repository](https://huggingface.co/deepseek-ai/DeepSeek-V4.1-Flash/tree/314113f8a7dadb388215396ba5fbee2c610a04d6) · [DeepSeek MIT license](../LICENSE.DeepSeek)
+
+## C++ CPU performance
+
+Build the [C++ CPU library](../README.md#build-the-c-cpu-engine) to enable the
+native kernels automatically. Set `VAIDYLANG_CPU_LIBRARY=off` to use NumPy for
+the same workload. Both paths run the reduced checkpoint and produce the
+same greedy output in the comparisons below.
+
+On an Apple M2 Pro, C++ activation quantization cut median latency by
+47–48% on the reduced FP8/FP4 fixture. Porting hyper-connections also
+reduced median latency by 20–23% on the reduced dense fixture.
+The paired runs used prompt lengths 8, 128, and 512, 16 output tokens,
+seed 123, two warmups, and seven measured requests per backend.
+
+```bash
+export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
+fixture_dir=$(mktemp -d)
+python3 -m deepseek_fixture "$fixture_dir" --context 1024
+VAIDYLANG_CPU_LIBRARY=off python3 harness.py bench --checkpoint "$fixture_dir" \
+  --prompt-lengths 8 128 512 --new-tokens 16 --warmup 2 --repeats 7
+python3 harness.py bench --checkpoint "$fixture_dir" \
+  --prompt-lengths 8 128 512 --new-tokens 16 --warmup 2 --repeats 7
+```
 
 | Pinned file | SHA-256 |
 | --- | --- |
