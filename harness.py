@@ -104,6 +104,7 @@ def verify(args, engine) -> dict:
     return {
         "passed": True, "oracle": oracle_name, "steps_per_path": args.new_tokens, "cases": cases,
         "device": "cuda" if args.cuda else "cpu", "dtype": args.dtype,
+        **({} if args.cuda else {"cpu_backend": getattr(engine, "cpu_backend", "python")}),
         "atol": args.atol, "rtol": args.rtol, "cuda_graph": args.cuda_graph,
         "fused_rms": args.fused_rms, "packed_projections": args.packed_projections,
         "unpacked_prefill": args.unpacked_prefill,
@@ -228,13 +229,16 @@ def generate(args):
             **record_prompt(ids, tokenizer, image_prompt),
         }
 
-    engine = load_engine(args.checkpoint, with_vision=image_prompt is not None)
+    engine = load_engine(
+        args.checkpoint, with_vision=image_prompt is not None, cpu_backend=getattr(args, "cpu_backend", "auto"),
+    )
     output_ids = greedy_ids(
         engine, ids, args.new_tokens, stop_ids,
         images=image_prompt.images if image_prompt is not None else None,
     )
     result = {
         "model_type": checkpoint.model_type, "device": "cpu", "dtype": "float32",
+        "cpu_backend": getattr(engine, "cpu_backend", "python"),
         **record_prompt(ids, tokenizer, image_prompt),
         "output_ids": output_ids, "output_sha256": digest(output_ids),
     }
@@ -260,6 +264,9 @@ def summarize_case(ids, new_tokens, samples) -> dict:
 
 def benchmark(args, engine) -> dict:
     identity = "tiny-seed-7" if args.checkpoint is None else checkpoint_identity(args.checkpoint)
+    thread_env = {name: os.getenv(name) for name in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS")}
+    if "VECLIB_MAXIMUM_THREADS" in os.environ:
+        thread_env["VECLIB_MAXIMUM_THREADS"] = os.environ["VECLIB_MAXIMUM_THREADS"]
 
     cases = []
     for length in args.prompt_lengths:
@@ -272,6 +279,7 @@ def benchmark(args, engine) -> dict:
     return {
         "schema_version": 1,
         "source_tag": args.source_tag,
+        "cpu_backend": getattr(engine, "cpu_backend", "python"),
         "run": {
             "checkpoint": identity,
             "device": "cpu",
@@ -280,9 +288,7 @@ def benchmark(args, engine) -> dict:
             "host": host_fingerprint(),
             "python": platform.python_version(),
             "numpy": np.__version__,
-            "thread_env": {name: os.getenv(name) for name in (
-                "OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
-            )},
+            "thread_env": thread_env,
             "new_tokens": args.new_tokens,
             "warmup": args.warmup,
             "repeats": args.repeats,
@@ -336,6 +342,8 @@ def parse_args(argv):
         command.add_argument("--new-tokens", type=int, default=8)
         command.add_argument("--seed", type=int, default=123)
         command.add_argument("--output", type=Path)
+        command.add_argument("--cpu-backend", choices=("auto", "native", "python"), default="auto",
+                             help="Qwen3 CPU backend (auto uses the C++ library when built)")
         if name == "verify":
             command.add_argument("--oracle", choices=("full", "hf"))
             command.add_argument("--oracle-device", default="cpu")
@@ -371,6 +379,8 @@ def parse_args(argv):
         source = generation.add_mutually_exclusive_group(required=True)
         if name == "generate":
             source.add_argument("--ids", type=int, nargs="+", help="Replay token IDs for a fixed number of steps")
+            generation.add_argument("--cpu-backend", choices=("auto", "native", "python"), default="auto",
+                                    help="Qwen3 CPU backend (auto uses the C++ library when built)")
         source.add_argument("--text", help="Encode text as a DeepSeek user turn or raw Qwen3 text")
         source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
         source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
@@ -401,6 +411,8 @@ def main(argv=None) -> int:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")
             if args.command == "bench" and (args.warmup < 0 or args.repeats < 1):
                 raise ValueError("Use nonnegative warmups and at least one measured repeat")
+            if args.cpu_backend == "native" and (args.tiny or getattr(args, "cuda", False)):
+                raise ValueError("The native CPU backend requires a Qwen3 checkpoint directory")
             if args.command == "verify" and args.cuda:
                 import torch
                 from cuda_engine import CudaQwen3Engine, GraphQwen3Engine
@@ -430,7 +442,8 @@ def main(argv=None) -> int:
                     or args.fused_decode_pointwise or args.tiled_decode
                 ):
                     raise ValueError("CUDA verification options require --cuda")
-                engine = Qwen3Engine(*tiny_weights()) if args.tiny else load_engine(args.checkpoint)
+                engine = (Qwen3Engine(*tiny_weights()) if args.tiny else
+                          load_engine(args.checkpoint, cpu_backend=args.cpu_backend))
             if max(args.prompt_lengths) + args.new_tokens - 1 > engine.config.max_position_embeddings:
                 raise ValueError("Prompt and generated tokens exceed the model context limit")
             result = verify(args, engine) if args.command == "verify" else benchmark(args, engine)

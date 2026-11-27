@@ -26,7 +26,7 @@ endif()
 
 add_library(vaidylang_cpu STATIC native/checkpoint.cpp native/qwen3.cpp)
 target_compile_features(vaidylang_cpu PUBLIC cxx_std_20)
-set_target_properties(vaidylang_cpu PROPERTIES CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON)
+set_target_properties(vaidylang_cpu PROPERTIES CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
 target_link_libraries(vaidylang_cpu PRIVATE ${VAIDYLANG_BLAS} nlohmann_json::nlohmann_json)
 if(APPLE)
     target_compile_definitions(vaidylang_cpu PRIVATE ACCELERATE_NEW_LAPACK)
@@ -39,10 +39,16 @@ add_executable(vaidylang-qwen3 native/main.cpp)
 target_link_libraries(vaidylang-qwen3 PRIVATE vaidylang_cpu nlohmann_json::nlohmann_json)
 set_target_properties(vaidylang-qwen3 PROPERTIES CXX_EXTENSIONS OFF)
 
+add_library(vaidylang_native SHARED native/bindings.cpp)
+target_link_libraries(vaidylang_native PRIVATE vaidylang_cpu)
+set_target_properties(vaidylang_native PROPERTIES CXX_EXTENSIONS OFF CXX_VISIBILITY_PRESET hidden)
+
 include(CTest)
 if(BUILD_TESTING)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     add_test(NAME native_qwen3
         COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/native/test_qwen3.py $<TARGET_FILE:vaidylang-qwen3>)
-    set_tests_properties(native_qwen3 PROPERTIES ENVIRONMENT "PYTHONPATH=${PROJECT_SOURCE_DIR}")
+    set_tests_properties(native_qwen3 PROPERTIES
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+        ENVIRONMENT "PYTHONPATH=${PROJECT_SOURCE_DIR};VAIDYLANG_CPU_LIBRARY=$<TARGET_FILE:vaidylang_native>")
 endif()

@@ -10,12 +10,42 @@ Qwen3 CUDA path, and tools for comparing logits, cache state, and latency.
 
 | Path | Status |
 | --- | --- |
-| **Qwen3 CPU** | The pinned Qwen3-0.6B checkpoint generates from text or token IDs. Cached decode was checked against a full-prefix Transformers oracle. [CPU parity](results/hf-parity-extended.json) |
+| **Qwen3 CPU** | A C++ engine runs the pinned Qwen3-0.6B checkpoint. The harness supports text and token IDs and retains the NumPy reference. [Build instructions](#build-the-c-cpu-engine) · [CPU parity](results/hf-parity-extended.json) |
 | **Qwen3 CUDA** | On one H100 NVL at batch size 1, the tuned path had 20–27% lower median time per output token than the recorded SGLang 0.5.23 baseline. Greedy output hashes matched at 1,024 and 4,096 prompt tokens. The 128-token case diverged on the first token. [Comparison](results/cuda-tuning/final-tiled/compare-sglang.json) |
 | **DeepSeek CPU** | Reduced dense and FP8/FP4 checkpoints ran all 100 prompts, including images. The repo also records a 32,743-token reduced run and a CPU probe of the published BF16 vision tower through its aligner. [CPU evidence](docs/deepseek-cpu-reference.md#100-prompt-workload) |
 | **DeepSeek CUDA** | A capture adapter targets the pinned upstream CUDA runtime. Published-weight capture, full-checkpoint execution in VaidyLang, and hardware-matched benchmarks are pending. [Reference replay](docs/deepseek-cpu-reference.md#capture-and-replay-reference-logits) · [GPU validation](docs/deepseek-cpu-reference.md#gpu-validation-pending) |
 
-## Quickstart
+## Build the C++ CPU engine
+
+Use CMake 3.24 or newer and a C++20 toolchain. macOS uses Accelerate. On
+Debian or Ubuntu, install `pkg-config`, `libopenblas-dev`, and
+`nlohmann-json3-dev`. CMake fetches a pinned JSON library when a system
+package is unavailable. The parity tests use Python and NumPy. Set
+`-DBUILD_TESTING=OFF` for a build without Python.
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
+
+Use any supported local Qwen3 Safetensors checkpoint, including the pinned
+revision in the [Qwen3 guide](docs/qwen3-benchmarks.md).
+
+```bash
+build/vaidylang-qwen3 checkpoints/qwen3-0.6b 8 3 1 4 1 5
+python3 harness.py generate --checkpoint checkpoints/qwen3-0.6b \
+  --text 'The capital of France is' --new-tokens 8
+```
+
+The standalone executable accepts input IDs and prints a JSON array of
+generated IDs. The harness automatically uses the C++ library in `build/`
+for Qwen3 checkpoints. Use `--cpu-backend python` for the NumPy reference,
+`--cpu-backend native` to require C++, or `VAIDYLANG_CPU_LIBRARY` to point
+to a library in a different build directory. Text input requires the
+checkpoint tokenizer and the Python `tokenizers` package.
+
+## Python quickstart
 
 Run from the repository root with Python 3.11 or newer.
 
@@ -55,6 +85,7 @@ interpreting a check.
 | --- | --- |
 | [`harness.py`](harness.py) | CPU verification, generation, checkpoint inspection, and benchmark comparison |
 | [`engine.py`](engine.py), [`cuda_engine.py`](cuda_engine.py), [`deepseek.py`](deepseek.py) | Qwen3 CPU and CUDA execution, plus the reduced DeepSeek CPU engine |
+| [`native/`](native/) | C++ Qwen3 CPU engine, standalone runner, and harness bindings |
 | [`tools/`](tools/) | Reference replay, checkpoint placement, and benchmark tools |
 | [`fixtures/`](fixtures/), [`results/`](results/) | Pinned inputs and archived evidence |
 | [`docs/`](docs/), [`third_party/deepseek_v41/`](third_party/deepseek_v41/) | Reproduction guides and vendored-source attribution |

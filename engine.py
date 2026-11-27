@@ -220,14 +220,26 @@ class Qwen3Engine:
         return joined @ weights["self_attn.o_proj.weight"].T
 
 
-def load_engine(directory, *, with_vision=False):
+def load_engine(directory, *, with_vision=False, cpu_backend="python"):
     """Load a supported CPU engine from the root architecture in config.json."""
+    if cpu_backend not in ("auto", "native", "python"):
+        raise ValueError(f"Unknown CPU backend {cpu_backend!r}")
     checkpoint = Checkpoint.open(directory)
     if checkpoint.model_type == "qwen3":
         if with_vision:
             raise ValueError("Qwen3 CPU engine supports text prompts")
+        if cpu_backend != "python":
+            from native_cpu import NativeQwen3Engine, load_library
+
+            library = load_library()
+            if library is not None:
+                return NativeQwen3Engine(checkpoint, Config.from_mapping(checkpoint.config), library)
+            if cpu_backend == "native":
+                raise ValueError("Build the C++ CPU library or set VAIDYLANG_CPU_LIBRARY")
         return Qwen3Engine.from_checkpoint(checkpoint)
     if checkpoint.model_type == "deepseek_v41":
+        if cpu_backend == "native":
+            raise ValueError("The native engine backend requires a Qwen3 checkpoint")
         from deepseek import DeepSeekEngine
 
         return DeepSeekEngine.from_checkpoint(checkpoint, with_vision=with_vision)

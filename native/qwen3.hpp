@@ -42,7 +42,8 @@ public:
     const Qwen3Config& config() const noexcept;
     std::unique_ptr<Request> new_request(int capacity) const;
 
-    // Writes the last input token's next-token logits. Input and output must not overlap.
+    // Writes the last input token's next-token logits. Calls sharing a request
+    // must be serialized. Input and output must not overlap.
     void append(Request& request, std::span<const int> tokens, std::span<float> logits) const;
 
 private:
