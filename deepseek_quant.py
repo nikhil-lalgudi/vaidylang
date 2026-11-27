@@ -169,12 +169,18 @@ class QuantizedWeight:
         self.activation_group_size = activation_group_size
         self.weight = dequantize(raw, scales, self.shape, block_shape=self.block_shape, encoding=encoding)
 
-    def linear(self, x):
+    def linear(self, x, *, quantized_inputs=None):
         x = np.asarray(x, dtype=np.float32)
         if x.ndim == 0 or x.shape[-1] != self.shape[1]:
             raise ValueError(f"Expected input width {self.shape[1]}, received shape {x.shape}")
-        if self.activation_group_size is not None:
-            x = quantize_activation(x, encoding="fp8", group_size=self.activation_group_size)
+        group = self.activation_group_size
+        if group is not None:
+            prepared = quantized_inputs.get(group) if quantized_inputs is not None else None
+            if prepared is None:
+                prepared = quantize_activation(x, encoding="fp8", group_size=group)
+                if quantized_inputs is not None:
+                    quantized_inputs[group] = prepared
+            x = prepared
         return x @ self.weight.T
 
     __call__ = linear

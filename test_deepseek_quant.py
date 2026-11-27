@@ -1,5 +1,8 @@
 import math
+from pathlib import Path
+from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 
@@ -108,6 +111,21 @@ class DeepSeekQuantizationTests(unittest.TestCase):
         # FP8 activation group reaches 7.03955, using scale=1/32.
         # With RNE the hidden vector is [-.125, 7] before w2.
         np.testing.assert_array_equal(fp4(h), [20.875, -10.75])
+
+    def test_moe_quantizes_each_shared_expert_input_once(self):
+        from deepseek import DeepSeekEngine
+        from deepseek_fixture import write_fixture
+        from deepseek_quant import quantize_activation
+
+        with TemporaryDirectory() as directory:
+            checkpoint = write_fixture(Path(directory), quantized=True)
+            engine = DeepSeekEngine.from_checkpoint(checkpoint)
+        x = np.linspace(-1, 1, engine.config.hidden_size, dtype=np.float32)
+        with patch("deepseek_quant.quantize_activation", wraps=quantize_activation) as quantizer:
+            output = engine.moe("layers.0", x, 0)
+        shared_calls = [call for call in quantizer.call_args_list if call.args[0] is x]
+        self.assertEqual(len(shared_calls), 1)
+        self.assertTrue(np.isfinite(output).all())
 
 
 if __name__ == "__main__":

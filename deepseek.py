@@ -77,9 +77,13 @@ class DeepSeekEngine:
         weight = self.weights[name]
         return weight if isinstance(weight, np.ndarray) else weight.weight
 
-    def linear(self, name, x):
+    def linear(self, name, x, *, quantized_inputs=None):
         weight = self.weights[name]
-        return x @ weight.T if isinstance(weight, np.ndarray) else weight.linear(x)
+        if isinstance(weight, np.ndarray):
+            return x @ weight.T
+        if quantized_inputs is None:
+            return weight.linear(x)
+        return weight.linear(x, quantized_inputs=quantized_inputs)
 
     def activation(self, x, encoding="fp8", group_size=32, scale_encoding="e8m0"):
         if self.config.quantization_config:
@@ -203,18 +207,21 @@ class DeepSeekEngine:
             c.scoring_func, c.norm_topk_prob, c.routed_scaling_factor,
         )
         y = np.zeros_like(x)
+        # Every expert's gate and up projections share this input. Keep the
+        # activation cache local to the token and independent of expert weights.
+        quantized_inputs = {} if c.quantization_config else None
         for i in np.argsort(ids):
-            y += self._expert(f"{prefix}experts.{ids[i]}", x, weights[i])
-        y += self._expert(prefix + "shared_experts", x, 1.0)
+            y += self._expert(f"{prefix}experts.{ids[i]}", x, weights[i], quantized_inputs)
+        y += self._expert(prefix + "shared_experts", x, 1.0, quantized_inputs)
         if emit:
             emit(layer_id, "expert_ids", ids)
             emit(layer_id, "expert_weights", weights)
             emit(layer_id, "moe", y)
         return y
 
-    def _expert(self, prefix, x, weight):
-        gate = self.linear(prefix + ".w1.weight", x)
-        up = self.linear(prefix + ".w3.weight", x)
+    def _expert(self, prefix, x, weight, quantized_inputs):
+        gate = self.linear(prefix + ".w1.weight", x, quantized_inputs=quantized_inputs)
+        up = self.linear(prefix + ".w3.weight", x, quantized_inputs=quantized_inputs)
         # Weight before w2, which quantizes its own input in the FP4 path.
         return self.linear(prefix + ".w2.weight", swiglu(gate, up, self.config.swiglu_limit) * weight)
 

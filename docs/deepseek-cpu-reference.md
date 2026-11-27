@@ -11,11 +11,21 @@ native kernels automatically. Set `VAIDYLANG_CPU_LIBRARY=off` to use NumPy for
 the same workload. Both paths run the reduced checkpoint and produce the
 same greedy output in the comparisons below.
 
-On an Apple M2 Pro, C++ activation quantization cut median latency by
-47–48% on the reduced FP8/FP4 fixture. Porting hyper-connections also
-reduced median latency by 20–23% on the reduced dense fixture.
-The paired runs used prompt lengths 8, 128, and 512, 16 output tokens,
-seed 123, two warmups, and seven measured requests per backend.
+On an Apple M2 Pro, native kernels and reuse of quantized expert
+inputs reduced median latency by 57–60% on the reduced FP8/FP4 fixture.
+Against the native kernels alone, reusing the expert input cut median
+prefill by another 6–8%. Native hyper-connections reduced median latency by
+20–23% on the reduced dense fixture. The paired runs used seed 123, 16
+output tokens, two warmups, and seven measured requests per backend.
+
+| Prompt tokens | First token, original → optimized | Output token, original → optimized |
+| ---: | ---: | ---: |
+| 8 | 38.0 → 15.8 ms | 4.96 → 2.00 ms |
+| 128 | 619.9 → 248.6 ms | 4.89 → 2.01 ms |
+| 512 | 2,448.0 → 1,032.6 ms | 4.86 → 2.08 ms |
+
+Both commands below reuse the expert input. Compare with the pre-migration
+revision to measure the combined speedup.
 
 ```bash
 export OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 VECLIB_MAXIMUM_THREADS=1
