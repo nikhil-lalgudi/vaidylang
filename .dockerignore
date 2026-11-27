@@ -1,12 +1,14 @@
 .git
 .venv
 **/__pycache__
+**/.pytest_cache
 **/.DS_Store
+build
 checkpoints
 reports
 **/*.nsys-rep
 **/*.qdrep
 **/*.sqlite
-.env
-.env.*
+**/.env
+**/.env.*
 .claude/settings.local.json
