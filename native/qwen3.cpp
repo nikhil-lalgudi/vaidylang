@@ -4,7 +4,9 @@
 #include "checkpoint.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
+#include <cstdint>
 #include <initializer_list>
 #include <stdexcept>
 #include <string>
@@ -23,33 +25,59 @@ namespace vaidy {
 namespace {
 
 constexpr int prefill_block = 128;
+[[maybe_unused]] constexpr std::size_t wide_matrix_elements = 1 << 20;
 
 struct Matrix {
-    Matrix(int rows, int columns) : rows(rows), columns(columns), data(elements({rows, columns})) {}
+    Matrix(int rows, int columns) : rows(rows), columns(columns), weight_count(elements({rows, columns})) {}
 
-    void read(Checkpoint& checkpoint, const std::string& name) {
-        checkpoint.read(name, {rows, columns}, data);
+    void read(Checkpoint& checkpoint, const std::string& name, bool retain_bf16 = true) {
+        read_rows(checkpoint, name, 0, rows, retain_bf16);
     }
 
-    // Read adjacent projections into one [out, in] matrix for one BLAS call.
-    void read_rows(Checkpoint& checkpoint, const std::string& name, int start, int count) {
-        checkpoint.read(name, {count, columns},
-            std::span(data).subspan(static_cast<std::size_t>(start) * columns, elements({count, columns})));
+    // Append projection segments in row order so they share one [out, in] matrix.
+    void read_rows(Checkpoint& checkpoint, const std::string& name, int start, int count,
+                   [[maybe_unused]] bool retain_bf16 = true) {
+        const auto offset = static_cast<std::size_t>(start) * columns;
+        const auto length = elements({count, columns});
+#if defined(__APPLE__) && defined(__aarch64__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000
+        if (retain_bf16 && data.empty() && rows >= 512 && weight_count >= wide_matrix_elements) {
+            if (__builtin_available(macOS 15.0, *)) {
+                if (!packed) {
+                    packed = std::make_unique_for_overwrite<std::uint16_t[]>(weight_count);
+                }
+                if (checkpoint.read_bf16(name, {count, columns}, {packed.get() + offset, length})) {
+                    return;
+                }
+                // A mixed matrix falls back to FP32, including its previously loaded rows.
+                data.resize(weight_count);
+                expand_bf16(packed.get(), data.data(), offset);
+                packed.reset();
+            }
+        }
+#endif
+        if (data.empty()) {
+            data.resize(weight_count);
+        }
+        checkpoint.read(name, {count, columns}, std::span(data).subspan(offset, length));
     }
 
-    void project(int steps, const float* input, float* output, float beta = 0) const {
+    std::size_t workspace_size() const noexcept {
+        return packed ? weight_count : 0;
+    }
+
+    void project(int steps, const float* input, float* output, float beta = 0, float* workspace = nullptr) const {
 #if defined(__APPLE__) && defined(__aarch64__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000
         // Larger prefill blocks already benefit from the BLAS scheduler.
-        if (steps <= 16 && rows >= 512 && data.size() >= (1 << 20)) {
+        if (steps <= 16 && rows >= 512 && weight_count >= wide_matrix_elements) {
             if (__builtin_available(macOS 15.0, *)) {
-                ProjectionJob job{*this, steps, input, output, beta};
+                ProjectionJob job{*this, steps, input, output, beta, workspace};
                 dispatch_apply_f(projection_workers, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0),
                     &job, project_job);
                 return;
             }
         }
 #endif
-        project_rows(steps, input, output, beta, 0, rows);
+        project_rows(steps, input, output, beta, workspace, 0, rows);
     }
 
     int rows;
@@ -57,8 +85,35 @@ struct Matrix {
     std::vector<float> data;
 
 private:
-    void project_rows(int steps, const float* input, float* output, float beta, int first, int count) const {
-        const auto* weights = data.data() + std::size_t(first) * columns;
+    std::size_t weight_count;
+    std::unique_ptr<std::uint16_t[]> packed;
+
+#if defined(__APPLE__) && defined(__aarch64__)
+    static void expand_bf16(const std::uint16_t* source, float* output, std::size_t count) {
+        for (std::size_t i = 0; i < count; ++i) {
+            output[i] = std::bit_cast<float>(std::uint32_t(source[i]) << 16);
+        }
+    }
+#endif
+
+    void project_rows(int steps, const float* input, float* output, float beta,
+                      [[maybe_unused]] float* workspace, int first, int count) const {
+        const auto offset = std::size_t(first) * columns;
+        const float* weights;
+#if defined(__APPLE__) && defined(__aarch64__)
+        if (packed) {
+            if (steps == 1) {
+                project_bf16_rows(reinterpret_cast<const std::byte*>(packed.get() + offset),
+                    count, columns, input, output + first, beta);
+                return;
+            }
+            expand_bf16(packed.get() + offset, workspace + offset, std::size_t(count) * columns);
+            weights = workspace + offset;
+        } else
+#endif
+        {
+            weights = data.data() + offset;
+        }
         if (steps == 1) {
             cblas_sgemv(CblasRowMajor, CblasNoTrans, count, columns, 1.f, weights, columns,
                 input, 1, beta, output + first, 1);
@@ -77,6 +132,7 @@ private:
         const float* input;
         float* output;
         float beta;
+        float* workspace;
     };
 
     static void project_job(void* context, std::size_t index) API_AVAILABLE(macos(15.0)) {
@@ -88,7 +144,7 @@ private:
         const auto saved = BLASGetThreading();
         const bool changed = saved != BLAS_THREADING_SINGLE_THREADED
             && BLASSetThreading(BLAS_THREADING_SINGLE_THREADED) == 0;
-        job.matrix.project_rows(job.steps, job.input, job.output, job.beta, first, end - first);
+        job.matrix.project_rows(job.steps, job.input, job.output, job.beta, job.workspace, first, end - first);
         if (changed) {
             BLASSetThreading(saved);
         }
@@ -112,7 +168,7 @@ struct TokenTable {
         }
 #endif
         dense = std::make_unique<Matrix>(rows, columns);
-        dense->read(checkpoint, name);
+        dense->read(checkpoint, name, false);
     }
 
     void embed(int token, float* output) const {
@@ -243,7 +299,9 @@ struct Qwen3::Weights {
         }
         layers.reserve(c.layers);
         for (int i = 0; i < c.layers; ++i) {
-            layers.emplace_back(checkpoint, c, i);
+            const auto& layer = layers.emplace_back(checkpoint, c, i);
+            workspace_size = std::max({workspace_size, layer.qkv.workspace_size(), layer.attention_output.workspace_size(),
+                layer.gate_up.workspace_size(), layer.down.workspace_size()});
         }
         for (int i = 0; i < c.head_dim / 2; ++i) {
             frequencies[i] = std::pow(c.rope_theta, -2.f * i / c.head_dim);
@@ -254,6 +312,7 @@ struct Qwen3::Weights {
     std::unique_ptr<TokenTable> head;
     std::vector<float> final_norm, frequencies;
     std::vector<Layer> layers;
+    std::size_t workspace_size = 0;
 };
 
 struct Qwen3::Request::Buffers {
@@ -274,6 +333,11 @@ struct Qwen3::Request::Buffers {
             values = std::make_unique_for_overwrite<float[]>(cache_elements);
             keys = std::move(new_keys);
         }
+        // Prefill reuses one FP32 expansion across layers. Decode reads BF16 directly.
+        if (steps > 1 && weights->workspace_size && !projection_workspace) {
+            projection_workspace = std::make_unique_for_overwrite<float[]>(weights->workspace_size);
+        }
+        float* workspace = projection_workspace.get();
         hidden.resize(elements({steps, c.hidden}));
         normalized.resize(hidden.size());
         projections.resize(elements({steps, qkv_width}));
@@ -297,7 +361,7 @@ struct Qwen3::Request::Buffers {
             for (int t = 0; t < steps; ++t) {
                 normalize(row(hidden, t, c.hidden), row(normalized, t, c.hidden), layer.input_norm, c.norm_eps);
             }
-            layer.qkv.project(steps, normalized.data(), projections.data());
+            layer.qkv.project(steps, normalized.data(), projections.data(), 0.f, workspace);
             const auto cache_stride = elements({capacity, c.head_dim});
             const auto layer_offset = static_cast<std::size_t>(layer_index) * c.kv_heads * cache_stride;
             for (int t = 0; t < steps; ++t) {
@@ -344,11 +408,11 @@ struct Qwen3::Request::Buffers {
                         scores.data(), end, v, c.head_dim, 0.f, attended, query);
                 }
             }
-            layer.attention_output.project(steps, joined.data(), hidden.data(), 1.f);
+            layer.attention_output.project(steps, joined.data(), hidden.data(), 1.f, workspace);
             for (int t = 0; t < steps; ++t) {
                 normalize(row(hidden, t, c.hidden), row(normalized, t, c.hidden), layer.post_norm, c.norm_eps);
             }
-            layer.gate_up.project(steps, normalized.data(), gate_up.data());
+            layer.gate_up.project(steps, normalized.data(), gate_up.data(), 0.f, workspace);
             for (int t = 0; t < steps; ++t) {
                 const float* gate = row(gate_up, t, 2 * c.intermediate);
                 const float* up = gate + c.intermediate;
@@ -357,7 +421,7 @@ struct Qwen3::Request::Buffers {
                     output[i] = (gate[i] / (1.f + std::exp(-gate[i]))) * up[i];
                 }
             }
-            layer.down.project(steps, gated.data(), hidden.data(), 1.f);
+            layer.down.project(steps, gated.data(), hidden.data(), 1.f, workspace);
         }
         if (!logits.empty()) {
             normalize(row(hidden, steps - 1, c.hidden), normalized.data(), weights->final_norm, c.norm_eps);
@@ -370,7 +434,7 @@ struct Qwen3::Request::Buffers {
     std::shared_ptr<const Weights> weights;
     int capacity;
     int length = 0;
-    std::unique_ptr<float[]> keys, values;
+    std::unique_ptr<float[]> keys, values, projection_workspace;
     std::vector<float> hidden, normalized, projections, joined, gate_up, gated, cosine, sine, scores;
 };
 

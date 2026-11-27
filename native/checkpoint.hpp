@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <initializer_list>
 #include <memory>
@@ -39,6 +40,8 @@ public:
     explicit Checkpoint(const std::filesystem::path& directory);
     ~Checkpoint();
     void read(const std::string& name, std::initializer_list<int> shape, std::span<float> output);
+    // Returns false for other supported storage types without writing output.
+    bool read_bf16(const std::string& name, std::initializer_list<int> shape, std::span<std::uint16_t> output);
     MappedTensor map(const std::string& name, std::initializer_list<int> shape);
 
 private:

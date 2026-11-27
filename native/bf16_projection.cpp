@@ -48,12 +48,20 @@ void project_rows(void* opaque, std::size_t index) {
     const std::size_t start = std::size_t(projection.rows) * index / workers;
     const std::size_t end = std::size_t(projection.rows) * (index + 1) / workers;
     const std::size_t stride = 2 * std::size_t(projection.columns);
-    for (auto row = start; row < end; ++row) {
-        projection.output[row] = dot_bf16(projection.weights + row * stride, projection.input, projection.columns);
-    }
+    project_bf16_rows(projection.weights + start * stride, static_cast<int>(end - start), projection.columns,
+        projection.input, projection.output + start, 0.f);
 }
 
 }  // namespace
+
+void project_bf16_rows(const std::byte* weights, int rows, int columns,
+    const float* input, float* output, float beta) {
+    const std::size_t stride = 2 * std::size_t(columns);
+    for (int row = 0; row < rows; ++row) {
+        const float product = dot_bf16(weights + std::size_t(row) * stride, input, columns);
+        output[row] = beta == 0 ? product : beta * output[row] + product;
+    }
+}
 
 void project_bf16_vocabulary(const std::byte* weights, int rows, int columns,
     const float* input, float* output) {

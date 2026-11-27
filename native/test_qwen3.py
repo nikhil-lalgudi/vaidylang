@@ -118,14 +118,19 @@ def check_large_bf16():
 
 def check_split_projections():
     config, _ = tiny_weights()
-    # The 513-row down projection exercises uneven splits and residual adds.
-    config = replace(config, hidden_size=513, intermediate_size=2048, num_hidden_layers=1)
+    # Odd widths exercise vector tails, uneven splits, and residual adds.
+    config = replace(config, hidden_size=513, intermediate_size=2049)
     rng = np.random.default_rng(82)
     tensors = {}
     for name, shape in weight_shapes(config).items():
         data = rng.standard_normal(shape, dtype=np.float32)
         values = 1 + 0.1 * data if len(shape) == 1 else data / np.sqrt(np.float32(shape[-1]))
-        tensors[name] = ("F32", values.astype("<f4"))
+        # The first layer can keep both gate/up segments packed. The second
+        # layer must preserve its BF16 gate when the FP32 up segment is loaded.
+        if name.endswith(("gate_proj.weight", "down_proj.weight")) or name == "model.layers.0.mlp.up_proj.weight":
+            tensors[name] = ("BF16", (values.view(np.uint32) >> 16).astype("<u2"))
+        else:
+            tensors[name] = ("F32", values.astype("<f4"))
     with TemporaryDirectory() as directory:
         path = Path(directory)
         (path / "config.json").write_text(json.dumps({

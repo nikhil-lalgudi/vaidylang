@@ -4,8 +4,11 @@
 
 namespace vaidy {
 
-// Large Apple Silicon vocabulary projection. The checkpoint weights remain
-// in BF16 while all products and accumulators use FP32.
+// The source rows use little-endian BF16. Products and accumulation use FP32.
+void project_bf16_rows(const std::byte* weights, int rows, int columns,
+    const float* input, float* output, float beta);
+
+// Large Apple Silicon vocabulary projection using the same row kernel.
 void project_bf16_vocabulary(const std::byte* weights, int rows, int columns,
     const float* input, float* output);
 

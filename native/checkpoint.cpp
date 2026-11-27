@@ -151,6 +151,19 @@ public:
         }
     }
 
+    bool read_bf16(const std::string& name, std::initializer_list<int> shape, std::span<std::uint16_t> output) {
+        const auto tensor = layout(name, shape);
+        if (tensor.dtype != MappedTensor::Dtype::bf16) {
+            return false;
+        }
+        if (output.size() != tensor.count) {
+            throw std::runtime_error("Incompatible output size for " + name);
+        }
+        stream_.seekg(static_cast<std::streamoff>(tensor.start));
+        read_bytes(output.data(), output.size_bytes(), name);
+        return true;
+    }
+
 private:
     void read_bytes(void* destination, std::size_t count, const std::string& name) {
         if (!stream_.read(static_cast<char*>(destination), static_cast<std::streamsize>(count))) {
@@ -320,6 +333,10 @@ std::size_t elements(std::initializer_list<int> dimensions) {
 }
 
 struct Checkpoint::Files {
+    std::string file_for(const std::string& name) const {
+        return weight_map.is_null() ? "model.safetensors" : weight_map.at(name).get<std::string>();
+    }
+
     fs::path directory;
     Json weight_map;
     std::map<std::string, Shard> shards;
@@ -350,14 +367,17 @@ Checkpoint::Checkpoint(const fs::path& directory) : files_(std::make_unique<File
 Checkpoint::~Checkpoint() = default;
 
 void Checkpoint::read(const std::string& name, std::initializer_list<int> shape, std::span<float> output) {
-    const auto file = files_->weight_map.is_null() ? "model.safetensors" :
-        files_->weight_map.at(name).get<std::string>();
+    const auto file = files_->file_for(name);
     files_->shards.try_emplace(file, files_->directory / file).first->second.read(name, shape, output);
 }
 
+bool Checkpoint::read_bf16(const std::string& name, std::initializer_list<int> shape, std::span<std::uint16_t> output) {
+    const auto file = files_->file_for(name);
+    return files_->shards.try_emplace(file, files_->directory / file).first->second.read_bf16(name, shape, output);
+}
+
 MappedTensor Checkpoint::map(const std::string& name, std::initializer_list<int> shape) {
-    const auto file = files_->weight_map.is_null() ? "model.safetensors" :
-        files_->weight_map.at(name).get<std::string>();
+    const auto file = files_->file_for(name);
     const auto path = files_->directory / file;
     const auto layout = files_->shards.try_emplace(file, path).first->second.layout(name, shape);
     auto& mapping = files_->mappings[file];

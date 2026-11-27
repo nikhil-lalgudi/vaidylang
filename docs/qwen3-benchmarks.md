@@ -121,6 +121,30 @@ Greedy tokens and teacher-forced logits matched exactly. The eight-token
 run's p95 first-token latency varied between trials and measured
 148.7 → 183.0 ms in this run.
 
+### Packed BF16 layer weights
+
+On Apple Silicon with macOS 15 or newer, large Qwen3 layer matrices stored
+in BF16 stay in that format in memory. Decode projects directly from BF16
+with FP32 arithmetic. Prefill uses a single reusable FP32 expansion buffer
+per request. Mixed-storage matrices use the FP32 path.
+
+The Apple M2 Pro comparison used the pinned Qwen3-0.6B checkpoint, eight
+prompt tokens, four output tokens, and seed 123. Each build ran in its own
+process with default Accelerate settings. The test alternated build order
+across two 40-request blocks per build, each with three warmups.
+
+| Metric | `a6628a0` | Packed BF16 layers |
+| --- | ---: | ---: |
+| Median first-token time | 179.5 ms | 128.9 ms |
+| p95 first-token time | 609.4 ms | 205.1 ms |
+| Median output-token time | 44.2 ms | 20.7 ms |
+| Peak resident memory across the runs | 2,095 MiB | 1,288 MiB |
+
+First-token p95 improved in both blocks, from 296.9 to 195.8 ms and from
+670.5 to 218.5 ms. The 8-token greedy output hashes matched in all runs.
+The maximum teacher-forced logit difference across the 8-, 128-, and
+512-token checks was `9.36e-6`.
+
 ## Reproduce the batch-1 CUDA benchmark
 
 1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a CUDA 13.0 toolkit, a compatible NVIDIA driver, a C++ compiler, and Ninja. Set `CUDA_HOME` and prepend its `bin` directory to `PATH` so JIT compilation uses that toolkit. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and generates 128 greedy tokens including after EOS.
