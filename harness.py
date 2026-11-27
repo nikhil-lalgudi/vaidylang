@@ -346,7 +346,7 @@ def parse_args(argv):
         command.add_argument("--seed", type=int, default=123)
         command.add_argument("--output", type=Path)
         command.add_argument("--cpu-backend", choices=("auto", "native", "python"), default="auto",
-                             help="Qwen3 CPU backend (auto uses the C++ library when built)")
+                             help="CPU backend (auto uses the C++ engine when available)")
         if name == "verify":
             command.add_argument("--oracle", choices=("full", "hf"))
             command.add_argument("--oracle-device", default="cpu")
@@ -383,7 +383,7 @@ def parse_args(argv):
         if name == "generate":
             source.add_argument("--ids", type=int, nargs="+", help="Replay token IDs for a fixed number of steps")
             generation.add_argument("--cpu-backend", choices=("auto", "native", "python"), default="auto",
-                                    help="Qwen3 CPU backend (auto uses the C++ library when built)")
+                                    help="CPU backend (auto uses the C++ engine when available)")
         source.add_argument("--text", help="Encode text as a DeepSeek user turn or raw Qwen3 text")
         source.add_argument("--text-file", type=Path, help="Read UTF-8 prompt text from a file")
         source.add_argument("--messages", type=Path, help="Read an array of DeepSeek chat messages from JSON")
@@ -391,6 +391,12 @@ def parse_args(argv):
         generation.add_argument("--reasoning-effort", type=read_reasoning_effort, metavar="1–100|low|high|max")
         generation.add_argument("--new-tokens", type=int, default=16)
         generation.add_argument("--output", type=Path)
+    serving = commands.add_parser("serve", help="Serve text chat from one local checkpoint on loopback")
+    serving.add_argument("--checkpoint", type=Path, required=True)
+    serving.add_argument("--name", help="Model name for API clients (defaults to the checkpoint directory name)")
+    serving.add_argument("--port", type=int, default=8000, help="Local HTTP port (default: 8000)")
+    serving.add_argument("--max-context", type=int, help="Prompt plus completion token limit (default: up to 4096)")
+    serving.add_argument("--cpu-backend", choices=("auto", "native", "python"), default="auto")
     comparison = commands.add_parser("compare")
     comparison.add_argument("--baseline", type=Path, required=True)
     comparison.add_argument("--candidate", type=Path, required=True)
@@ -409,13 +415,24 @@ def main(argv=None) -> int:
             result = Checkpoint.open(args.checkpoint, metadata_only=args.metadata_only).describe()
         elif args.command in ("generate", "prepare-prompt"):
             result = generate(args)
+        elif args.command == "serve":
+            from serve import create_server
+
+            with create_server(args.checkpoint, name=args.name, port=args.port, cpu_backend=args.cpu_backend,
+                               context_limit=args.max_context) as server:
+                print(f"Serving {server.model.name} at http://127.0.0.1:{server.server_port}/v1", flush=True)
+                try:
+                    server.serve_forever()
+                except KeyboardInterrupt:
+                    pass
+            return 0
         else:
             if args.seed < 0 or args.new_tokens < 2 or min(args.prompt_lengths) < 1:
                 raise ValueError("Use a nonnegative seed, positive prompt lengths, and at least two output tokens")
             if args.command == "bench" and (args.warmup < 0 or args.repeats < 1):
                 raise ValueError("Use nonnegative warmups and at least one measured repeat")
             if args.cpu_backend == "native" and (args.tiny or getattr(args, "cuda", False)):
-                raise ValueError("The native CPU backend requires a Qwen3 checkpoint directory")
+                raise ValueError("The native CPU backend requires a Qwen3 or Inkling checkpoint directory")
             if args.command == "verify" and args.cuda:
                 import torch
                 from cuda_engine import CudaQwen3Engine, GraphQwen3Engine
