@@ -149,6 +149,22 @@ void normalize_rotate(float* vector, const std::vector<float>& weights, const fl
 }
 
 void softmax(float* scores, int visible, int total) {
+#ifdef __APPLE__
+    // Long rows amortize the vector-library calls.
+    if (visible >= 128) {
+        const auto count = static_cast<vDSP_Length>(visible);
+        float maximum, sum;
+        vDSP_maxv(scores, 1, &maximum, count);
+        const float shift = -maximum;
+        vDSP_vsadd(scores, 1, &shift, scores, 1, count);
+        vvexpf(scores, scores, &visible);
+        vDSP_sve(scores, 1, &sum, count);
+        const float inverse = 1.f / sum;
+        vDSP_vsmul(scores, 1, &inverse, scores, 1, count);
+        std::fill(scores + visible, scores + total, 0.f);
+        return;
+    }
+#endif
     const float max_score = *std::max_element(scores, scores + visible);
     float sum = 0;
     for (int i = 0; i < visible; ++i) {

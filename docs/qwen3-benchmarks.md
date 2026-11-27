@@ -81,6 +81,23 @@ median first-token latency and 164.8 → 243.6 ms p95. Accelerate vector
 exponentials were tested separately and reverted after increasing median
 prefill latency for the 128- and 512-token cases.
 
+### Long-context CPU attention
+
+The Accelerate path vectorizes softmax for attention rows with at least
+128 visible tokens. In paired runs against `4cad2d4` on an Apple M2 Pro,
+median time to first token improved by 22–30% on longer prompts. The
+runs used the pinned Qwen3-0.6B checkpoint, seed 123, four output tokens,
+one warmup, five measured requests per build, and one BLAS thread.
+
+| Prompt tokens | Median first token, before → after |
+| ---: | ---: |
+| 512 | 1,745 → 1,364 ms |
+| 1,024 | 3,858 → 2,920 ms |
+| 2,048 | 9,609 → 6,733 ms |
+
+Greedy tokens matched at 8, 128, 512, 1,024, and 2,048 prompt tokens.
+The maximum teacher-forced logit difference was `5.37e-5`.
+
 ## Reproduce the batch-1 CUDA benchmark
 
 1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a CUDA 13.0 toolkit, a compatible NVIDIA driver, a C++ compiler, and Ninja. Set `CUDA_HOME` and prepend its `bin` directory to `PATH` so JIT compilation uses that toolkit. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and generates 128 greedy tokens including after EOS.
