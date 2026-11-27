@@ -239,10 +239,21 @@ def load_engine(directory, *, with_vision=False, cpu_backend="python"):
         return Qwen3Engine.from_checkpoint(checkpoint)
     if checkpoint.model_type == "deepseek_v41":
         if cpu_backend == "native":
-            raise ValueError("The native engine backend requires a Qwen3 checkpoint")
+            raise ValueError("The native engine backend supports Qwen3 and original Inkling checkpoints")
         from deepseek import DeepSeekEngine
 
         return DeepSeekEngine.from_checkpoint(checkpoint, with_vision=with_vision)
+    if checkpoint.model_type == "inkling_mm_model":
+        if with_vision:
+            raise ValueError("The Inkling CPU engine accepts text prompts")
+        if cpu_backend == "python":
+            raise ValueError("Use the native CPU backend for Inkling")
+        from native_cpu import NativeInklingEngine, load_library
+
+        library = load_library()
+        if library is None:
+            raise ValueError("Build the C++ CPU library or set VAIDYLANG_CPU_LIBRARY")
+        return NativeInklingEngine(checkpoint, library)
     raise ValueError(f"Unsupported CPU model_type {checkpoint.model_type!r}")
 
 

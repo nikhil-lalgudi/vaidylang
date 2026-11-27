@@ -24,7 +24,7 @@ if(NOT nlohmann_json_FOUND)
     FetchContent_MakeAvailable(nlohmann_json)
 endif()
 
-add_library(vaidylang_cpu STATIC native/checkpoint.cpp native/qwen3.cpp)
+add_library(vaidylang_cpu STATIC native/checkpoint.cpp native/qwen3.cpp native/inkling.cpp)
 target_compile_features(vaidylang_cpu PUBLIC cxx_std_20)
 set_target_properties(vaidylang_cpu PROPERTIES CXX_EXTENSIONS OFF POSITION_INDEPENDENT_CODE ON CXX_VISIBILITY_PRESET hidden)
 target_link_libraries(vaidylang_cpu PRIVATE ${VAIDYLANG_BLAS} nlohmann_json::nlohmann_json)
@@ -50,7 +50,8 @@ if(BUILD_TESTING)
         COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/native/test_qwen3.py $<TARGET_FILE:vaidylang-qwen3>)
     add_test(NAME native_deepseek_cpu
         COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/native/test_deepseek_cpu.py)
-    set_tests_properties(native_qwen3 native_deepseek_cpu PROPERTIES
+    add_test(NAME native_inkling COMMAND ${Python3_EXECUTABLE} -m unittest -v test_inkling)
+    set_tests_properties(native_qwen3 native_deepseek_cpu native_inkling PROPERTIES
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         ENVIRONMENT "PYTHONPATH=${PROJECT_SOURCE_DIR};VAIDYLANG_CPU_LIBRARY=$<TARGET_FILE:vaidylang_native>")
 endif()

@@ -1,4 +1,5 @@
 #include "hyper_connections.hpp"
+#include "inkling.hpp"
 #include "qwen3.hpp"
 #include "quantize.hpp"
 
@@ -51,6 +52,34 @@ VAIDY_EXPORT void vaidy_qwen3_request_free(vaidy::Qwen3::Request* request) noexc
 
 VAIDY_EXPORT int vaidy_qwen3_length(const vaidy::Qwen3::Request* request) noexcept {
     return request->length();
+}
+
+VAIDY_EXPORT vaidy::Inkling* vaidy_inkling_load(const char* directory) noexcept {
+    return checked([&] { return new vaidy::Inkling(directory); });
+}
+
+VAIDY_EXPORT void vaidy_inkling_free(vaidy::Inkling* model) noexcept {
+    delete model;
+}
+
+VAIDY_EXPORT vaidy::Inkling::Request* vaidy_inkling_request(const vaidy::Inkling* model, int capacity) noexcept {
+    return checked([&] { return model->new_request(capacity).release(); });
+}
+
+VAIDY_EXPORT void vaidy_inkling_request_free(vaidy::Inkling::Request* request) noexcept {
+    delete request;
+}
+
+VAIDY_EXPORT int vaidy_inkling_length(const vaidy::Inkling::Request* request) noexcept {
+    return request->length();
+}
+
+VAIDY_EXPORT bool vaidy_inkling_append(const vaidy::Inkling* model, vaidy::Inkling::Request* request,
+    const int* tokens, std::size_t steps, float* logits, std::size_t vocab) noexcept {
+    return checked([&] {
+        model->append(*request, {tokens, steps}, {logits, vocab});
+        return true;
+    });
 }
 
 VAIDY_EXPORT bool vaidy_qwen3_append(const vaidy::Qwen3* model, vaidy::Qwen3::Request* request,

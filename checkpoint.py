@@ -62,6 +62,10 @@ class Checkpoint:
         return self.config.get("text_config", self.config)
 
     @property
+    def context_limit(self):
+        return self.text_config.get("max_position_embeddings", self.text_config.get("model_max_length"))
+
+    @property
     def missing_shards(self):
         return tuple(shard for shard in self.shards if not (self.directory / shard).is_file())
 
@@ -133,7 +137,7 @@ class Checkpoint:
             "model_type": self.model_type,
             "architectures": self.config.get("architectures", []),
             "vocab_size": self.text_config.get("vocab_size"),
-            "max_position_embeddings": self.text_config.get("max_position_embeddings"),
+            "max_position_embeddings": self.context_limit,
             "quantization_config": self.config.get("quantization_config"),
             "shard_count": len(self.shards),
             "indexed_tensor_count": len(self.weight_map) if self.weight_map is not None else None,

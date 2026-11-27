@@ -221,7 +221,10 @@ def generate(args):
     elif args.thinking or args.reasoning_effort is not None:
         raise ValueError("Thinking options require text or structured messages")
 
-    if len(ids) + args.new_tokens - 1 > checkpoint.text_config["max_position_embeddings"]:
+    context_limit = checkpoint.context_limit
+    if type(context_limit) is not int or context_limit < 1:
+        raise ValueError("Checkpoint requires a positive context limit")
+    if len(ids) + args.new_tokens - 1 > context_limit:
         raise ValueError("Prompt and generated tokens exceed the model context limit")
     if args.command == "prepare-prompt":
         return {
