@@ -98,6 +98,29 @@ one warmup, five measured requests per build, and one BLAS thread.
 Greedy tokens matched at 8, 128, 512, 1,024, and 2,048 prompt tokens.
 The maximum teacher-forced logit difference was `5.37e-5`.
 
+### Parallel CPU projections
+
+On Apple Silicon with macOS 15 or newer, large linear projections for
+decode and short prefill blocks split their output columns across four
+workers. Each worker uses single-threaded Accelerate BLAS and restores its
+prior thread setting. The split applies to matrices with at least 512
+output rows and 1,048,576 elements, for blocks of at most 16 tokens.
+
+Paired runs on an Apple M2 Pro used one loaded Qwen3-0.6B model, default
+Accelerate settings, seed 123, four output tokens, and two warmups. Median
+decode latency fell by 28–32%, and median first-token time for the eight-token
+prompt fell from 123.5 to 94.4 ms.
+
+| Prompt tokens | Measured requests per mode | Median output token, before → after |
+| ---: | ---: | ---: |
+| 8 | 21 | 40.0 → 27.1 ms |
+| 128 | 9 | 39.8 → 28.5 ms |
+| 512 | 7 | 60.8 → 41.2 ms |
+
+Greedy tokens and teacher-forced logits matched exactly. The eight-token
+run's p95 first-token latency varied between trials and measured
+148.7 → 183.0 ms in this run.
+
 ## Reproduce the batch-1 CUDA benchmark
 
 1. **Capture the baseline.** Use a Linux host with one visible NVIDIA GPU and native BF16. Install SGLang 0.5.23 in a GPU environment with a CUDA 13.0 toolkit, a compatible NVIDIA driver, a C++ compiler, and Ninja. Set `CUDA_HOME` and prepend its `bin` directory to `PATH` so JIT compilation uses that toolkit. The benchmark validates both checkpoint file hashes, runs one request at a time with BF16 weights and KV cache, disables prefix reuse, chunked prefill, and speculative decoding, and generates 128 greedy tokens including after EOS.

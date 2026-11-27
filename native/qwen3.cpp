@@ -12,6 +12,9 @@
 
 #ifdef __APPLE__
 #include <Accelerate/Accelerate.h>
+#if defined(__aarch64__)
+#include <dispatch/dispatch.h>
+#endif
 #else
 #include <cblas.h>
 #endif
@@ -35,18 +38,62 @@ struct Matrix {
     }
 
     void project(int steps, const float* input, float* output, float beta = 0) const {
-        if (steps == 1) {
-            cblas_sgemv(CblasRowMajor, CblasNoTrans, rows, columns, 1.f, data.data(), columns,
-                input, 1, beta, output, 1);
-        } else {
-            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, steps, rows, columns, 1.f,
-                input, columns, data.data(), columns, beta, output, rows);
+#if defined(__APPLE__) && defined(__aarch64__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000
+        // Larger prefill blocks already benefit from the BLAS scheduler.
+        if (steps <= 16 && rows >= 512 && data.size() >= (1 << 20)) {
+            if (__builtin_available(macOS 15.0, *)) {
+                ProjectionJob job{*this, steps, input, output, beta};
+                dispatch_apply_f(projection_workers, dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0),
+                    &job, project_job);
+                return;
+            }
         }
+#endif
+        project_rows(steps, input, output, beta, 0, rows);
     }
 
     int rows;
     int columns;
     std::vector<float> data;
+
+private:
+    void project_rows(int steps, const float* input, float* output, float beta, int first, int count) const {
+        const auto* weights = data.data() + std::size_t(first) * columns;
+        if (steps == 1) {
+            cblas_sgemv(CblasRowMajor, CblasNoTrans, count, columns, 1.f, weights, columns,
+                input, 1, beta, output + first, 1);
+        } else {
+            cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, steps, count, columns, 1.f,
+                input, columns, weights, columns, beta, output + first, rows);
+        }
+    }
+
+#if defined(__APPLE__) && defined(__aarch64__) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000
+    static constexpr std::size_t projection_workers = 4;
+
+    struct ProjectionJob {
+        const Matrix& matrix;
+        int steps;
+        const float* input;
+        float* output;
+        float beta;
+    };
+
+    static void project_job(void* context, std::size_t index) API_AVAILABLE(macos(15.0)) {
+        const auto& job = *static_cast<const ProjectionJob*>(context);
+        const auto row_count = static_cast<std::size_t>(job.matrix.rows);
+        const int first = static_cast<int>(row_count * index / projection_workers);
+        const int end = static_cast<int>(row_count * (index + 1) / projection_workers);
+        // Each worker owns disjoint output columns and runs a single BLAS job.
+        const auto saved = BLASGetThreading();
+        const bool changed = saved != BLAS_THREADING_SINGLE_THREADED
+            && BLASSetThreading(BLAS_THREADING_SINGLE_THREADED) == 0;
+        job.matrix.project_rows(job.steps, job.input, job.output, job.beta, first, end - first);
+        if (changed) {
+            BLASSetThreading(saved);
+        }
+    }
+#endif
 };
 
 struct TokenTable {

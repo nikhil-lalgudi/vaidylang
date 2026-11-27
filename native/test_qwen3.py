@@ -1,5 +1,6 @@
 """Exercise the standalone executable against the NumPy reference."""
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, replace
 import json
 import os
@@ -115,7 +116,42 @@ def check_large_bf16():
         np.testing.assert_allclose(engine.decode(17, state), reference.decode(17, oracle), rtol=3e-5, atol=3e-5)
 
 
+def check_split_projections():
+    config, _ = tiny_weights()
+    # The 513-row down projection exercises uneven splits and residual adds.
+    config = replace(config, hidden_size=513, intermediate_size=2048, num_hidden_layers=1)
+    rng = np.random.default_rng(82)
+    tensors = {}
+    for name, shape in weight_shapes(config).items():
+        data = rng.standard_normal(shape, dtype=np.float32)
+        values = 1 + 0.1 * data if len(shape) == 1 else data / np.sqrt(np.float32(shape[-1]))
+        tensors[name] = ("F32", values.astype("<f4"))
+    with TemporaryDirectory() as directory:
+        path = Path(directory)
+        (path / "config.json").write_text(json.dumps({
+            **asdict(config), "model_type": "qwen3", "hidden_act": "silu",
+        }))
+        write_checkpoint_weights(path / "model.safetensors", tensors)
+        reference = Qwen3Engine.from_checkpoint(path)
+        native = load_engine(path, cpu_backend="native")
+
+        def check(length):
+            prompt = list(range(length))
+            actual, state = native.prefill(prompt, length + 2)
+            expected, oracle = reference.prefill(prompt, length + 2)
+            np.testing.assert_allclose(actual, expected, rtol=3e-5, atol=3e-5)
+            for token in (9, 5):
+                np.testing.assert_allclose(
+                    native.decode(token, state), reference.decode(token, oracle), rtol=3e-5, atol=3e-5,
+                )
+
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            list(workers.map(check, (1, 8, 17, 32)))
+
+
 if __name__ == "__main__":
     main(sys.argv[1])
+    if os.environ.get("VAIDYLANG_CPU_LIBRARY"):
+        check_split_projections()
     if sys.platform == "darwin" and os.environ.get("VAIDYLANG_CPU_LIBRARY"):
         check_large_bf16()
