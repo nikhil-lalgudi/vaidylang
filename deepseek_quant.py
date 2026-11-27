@@ -4,6 +4,9 @@ The encoding and scale rules are derived from DeepSeek's MIT-licensed
 inference/convert.py and inference/kernel.py at 314113f8a7dadb388215396ba5fbee2c610a04d6.
 """
 
+from functools import cache
+from operator import index
+
 import numpy as np
 
 
@@ -89,6 +92,32 @@ def _round_values(x, table):
     return np.copysign(table[np.where(use_low, low, high)], x)
 
 
+@cache
+def _native_quantizer():
+    from ctypes import c_bool, c_size_t, c_void_p
+
+    from native_cpu import check, load_library
+
+    library = load_library()
+    function = getattr(library, "vaidy_quantize_activation", None)
+    if function is None:
+        return None
+    function.argtypes = [c_void_p, c_void_p, c_size_t, c_size_t, c_size_t, c_bool, c_bool]
+    function.restype = c_bool
+
+    def quantize(x, group_size, fp4, fp8_scale):
+        values = np.ascontiguousarray(x)
+        result = np.empty(x.shape, dtype=np.float32)
+        width = x.shape[-1]
+        check(library, function(
+            values.ctypes.data, result.ctypes.data, x.size // width, width,
+            min(group_size, width), fp4, fp8_scale,
+        ))
+        return result
+
+    return quantize
+
+
 def quantize_activation(x, *, encoding, group_size, scale_encoding="e8m0"):
     """Fake-quantize per row and input block, returning dequantized FP32.
 
@@ -96,14 +125,19 @@ def quantize_activation(x, *, encoding, group_size, scale_encoding="e8m0"):
     A final partial group follows the same rule over its existing elements.
     """
     x = np.asarray(x, dtype=np.float32)
+    group_size = index(group_size)
     if x.ndim == 0 or not x.shape[-1] or group_size < 1:
         raise ValueError("Activation must have a nonempty last axis and positive group size")
-    if not np.isfinite(x).all():
-        raise ValueError("Found a nonfinite activation")
     if encoding not in ("fp4", "fp8"):
         raise ValueError(f"Unsupported activation encoding {encoding!r}")
     if scale_encoding not in ("e8m0", "fp8") or (scale_encoding == "fp8" and encoding != "fp4"):
         raise ValueError(f"Unsupported scale encoding {scale_encoding!r} for {encoding}")
+
+    native = _native_quantizer()
+    if native is not None:
+        return native(x, group_size, encoding == "fp4", scale_encoding == "fp8")
+    if not np.isfinite(x).all():
+        raise ValueError("Found a nonfinite activation")
 
     table = FP4_MAGNITUDES if encoding == "fp4" else _FP8_MAGNITUDES
     result = np.empty_like(x)

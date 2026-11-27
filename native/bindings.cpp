@@ -1,4 +1,5 @@
 #include "qwen3.hpp"
+#include "quantize.hpp"
 
 #include <array>
 #include <cstdio>
@@ -55,6 +56,14 @@ VAIDY_EXPORT bool vaidy_qwen3_append(const vaidy::Qwen3* model, vaidy::Qwen3::Re
     const int* tokens, std::size_t steps, float* logits, std::size_t vocab) noexcept {
     return checked([&] {
         model->append(*request, {tokens, steps}, {logits, vocab});
+        return true;
+    });
+}
+
+VAIDY_EXPORT bool vaidy_quantize_activation(const float* input, float* output, std::size_t rows,
+    std::size_t width, std::size_t group, bool fp4, bool fp8_scale) noexcept {
+    return checked([&] {
+        vaidy::quantize_activation(input, output, rows, width, group, fp4, fp8_scale);
         return true;
     });
 }

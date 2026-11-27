@@ -12,7 +12,7 @@ Qwen3 CUDA path, and tools for comparing logits, cache state, and latency.
 | --- | --- |
 | **Qwen3 CPU** | A C++ engine runs the pinned Qwen3-0.6B checkpoint. The harness supports text and token IDs and retains the NumPy reference. [Build instructions](#build-the-c-cpu-engine) · [CPU parity](results/hf-parity-extended.json) |
 | **Qwen3 CUDA** | On one H100 NVL at batch size 1, the tuned path had 20–27% lower median time per output token than the recorded SGLang 0.5.23 baseline. Greedy output hashes matched at 1,024 and 4,096 prompt tokens. The 128-token case diverged on the first token. [Comparison](results/cuda-tuning/final-tiled/compare-sglang.json) |
-| **DeepSeek CPU** | Reduced dense and FP8/FP4 checkpoints ran all 100 prompts, including images. The repo also records a 32,743-token reduced run and a CPU probe of the published BF16 vision tower through its aligner. [CPU evidence](docs/deepseek-cpu-reference.md#100-prompt-workload) |
+| **DeepSeek CPU** | Reduced dense and FP8/FP4 checkpoints ran all 100 prompts, including images. The C++ library accelerates FP8/FP4 activation quantization. [CPU evidence](docs/deepseek-cpu-reference.md#100-prompt-workload) |
 | **DeepSeek CUDA** | A capture adapter targets the pinned upstream CUDA runtime. Published-weight capture, full-checkpoint execution in VaidyLang, and hardware-matched benchmarks are pending. [Reference replay](docs/deepseek-cpu-reference.md#capture-and-replay-reference-logits) · [GPU validation](docs/deepseek-cpu-reference.md#gpu-validation-pending) |
 
 ## Build the C++ CPU engine
@@ -44,6 +44,10 @@ for Qwen3 checkpoints. Use `--cpu-backend python` for the NumPy reference,
 `--cpu-backend native` to require C++, or `VAIDYLANG_CPU_LIBRARY` to point
 to a library in a different build directory. Text input requires the
 checkpoint tokenizer and the Python `tokenizers` package.
+
+Reduced DeepSeek inference automatically uses the C++ activation quantizer
+when the library is available. Set `VAIDYLANG_CPU_LIBRARY=off` to reproduce
+NumPy-only runs.
 
 ## Python quickstart
 

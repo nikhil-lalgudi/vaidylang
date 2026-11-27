@@ -39,7 +39,7 @@ add_executable(vaidylang-qwen3 native/main.cpp)
 target_link_libraries(vaidylang-qwen3 PRIVATE vaidylang_cpu nlohmann_json::nlohmann_json)
 set_target_properties(vaidylang-qwen3 PROPERTIES CXX_EXTENSIONS OFF)
 
-add_library(vaidylang_native SHARED native/bindings.cpp)
+add_library(vaidylang_native SHARED native/bindings.cpp native/quantize.cpp)
 target_link_libraries(vaidylang_native PRIVATE vaidylang_cpu)
 set_target_properties(vaidylang_native PROPERTIES CXX_EXTENSIONS OFF CXX_VISIBILITY_PRESET hidden)
 
@@ -48,7 +48,9 @@ if(BUILD_TESTING)
     find_package(Python3 COMPONENTS Interpreter REQUIRED)
     add_test(NAME native_qwen3
         COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/native/test_qwen3.py $<TARGET_FILE:vaidylang-qwen3>)
-    set_tests_properties(native_qwen3 PROPERTIES
+    add_test(NAME native_deepseek_quant
+        COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/native/test_deepseek_quant.py)
+    set_tests_properties(native_qwen3 native_deepseek_quant PROPERTIES
         WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
         ENVIRONMENT "PYTHONPATH=${PROJECT_SOURCE_DIR};VAIDYLANG_CPU_LIBRARY=$<TARGET_FILE:vaidylang_native>")
 endif()
